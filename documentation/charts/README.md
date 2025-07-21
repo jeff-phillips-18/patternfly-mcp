@@ -2,10 +2,6 @@
 
 Essential rules for PatternFly Charts implementation using Victory.js and ECharts.
 
-## Related Files
-- [**Component Architecture**](../guidelines/component-architecture.md) - Chart component structure rules
-- [**Performance Optimization**](../troubleshooting/performance.md) - Chart performance considerations
-
 ## Installation Rules
 
 ### Required Installation
@@ -82,8 +78,6 @@ Module not found: Can't resolve '@patternfly/react-charts'
 ### Color Rules
 - ✅ **Use PatternFly chart color tokens** - For consistency with design system
 - ❌ **Don't use hardcoded colors** - Use design tokens instead
-
-
 
 ```jsx
 // ✅ Correct - Use PatternFly color tokens
