@@ -32,7 +32,7 @@ class PatternflyMcpServer {
     this.setupErrorHandling();
   }
 
-  private readonly docsPath = join(dirname(fileURLToPath(import.meta.url)), '..', '.pf-ai-documentation');
+  private readonly docsPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'documentation');
 
   private async listDocumentation(path: string): Promise<string> {
     try {
@@ -291,7 +291,7 @@ class PatternflyMcpServer {
               properties: {
                 path: {
                   type: 'string',
-                  description: 'Optional path to list contents of specific directory (relative to .pf-ai-documentation)',
+                  description: 'Optional path to list contents of specific directory (relative to documentation)',
                 },
               },
             },
@@ -304,7 +304,7 @@ class PatternflyMcpServer {
               properties: {
                 file_path: {
                   type: 'string',
-                  description: 'Path to the documentation file (relative to .pf-ai-documentation)',
+                  description: 'Path to the documentation file (relative to documentation)',
                 },
               },
               required: ['file_path'],

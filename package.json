@@ -9,7 +9,7 @@
   },
   "files": [
     "dist/**/*",
-    ".pf-ai-documentation/**/*",
+    "documentation/**/*",
     "README.md",
     "mcp-config-example.json"
   ],

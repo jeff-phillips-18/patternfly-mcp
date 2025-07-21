@@ -76,13 +76,13 @@ The MCP server communicates over stdio and provides access to PatternFly documen
 Lists available PatternFly documentation categories and files.
 
 **Parameters:**
-- `path` (string, optional): Specific directory path to list (relative to .pf-ai-documentation)
+- `path` (string, optional): Specific directory path to list (relative to documentation)
 
 #### `get_documentation`
 Retrieves the full content of a specific PatternFly documentation file.
 
 **Parameters:**
-- `file_path` (string, required): Path to the documentation file (relative to .pf-ai-documentation)
+- `file_path` (string, required): Path to the documentation file (relative to documentation)
 
 #### `search_documentation`
 Searches for specific text across all PatternFly documentation files.
@@ -139,7 +139,7 @@ For local development (without npx):
 
 ```
 patternfly-mcp/
-├── .pf-ai-documentation/ # PatternFly development rules and guidelines
+├── documentation/ # PatternFly development rules and guidelines
 ├── src/
 │   └── index.ts          # Main server implementation
 ├── dist/                 # Compiled JavaScript (after build)
@@ -152,7 +152,7 @@ patternfly-mcp/
 
 ## Documentation Structure
 
-The server provides access to the PatternFly documentation located in `.pf-ai-documentation/`:
+The server provides access to the PatternFly documentation located in `documentation/`:
 
 - **charts/** - PatternFly Charts implementation rules
 - **chatbot/** - PatternFly Chatbot component rules
