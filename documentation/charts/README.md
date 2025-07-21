@@ -107,8 +107,6 @@ Module not found: Can't resolve '@patternfly/react-charts'
 - ✅ **Use PatternFly chart color tokens** - For consistency with design system
 - ❌ **Don't use hardcoded colors** - Use design tokens instead
 
-
-
 ```jsx
 // ✅ Correct - Use PatternFly color tokens
 const chartBlueColor = [
