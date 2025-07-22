@@ -8,9 +8,12 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { readFile, readdir, stat } from 'fs/promises';
-import { join, relative, dirname } from 'path';
+import { readFile } from 'fs/promises';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { ComponentDocs } from './ComponentDocs.js';
+import { LayoutDocs } from './LayoutDocs.js';
+import { ChartDocs } from './ChartDocs.js';
 
 class PatternflyMcpServer {
   private server: Server;
@@ -34,246 +37,82 @@ class PatternflyMcpServer {
 
   private readonly docsPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'documentation');
 
-  private async listDocumentation(path: string): Promise<string> {
-    try {
-      const fullPath = join(this.docsPath, path);
-      const entries = await readdir(fullPath, { withFileTypes: true });
-      
-      const result = [`# Documentation Structure${path ? ` - ${path}` : ''}\n`];
-      
-      const directories = entries.filter(entry => entry.isDirectory()).sort((a, b) => a.name.localeCompare(b.name));
-      const files = entries.filter(entry => entry.isFile()).sort((a, b) => a.name.localeCompare(b.name));
-      
-      if (directories.length > 0) {
-        result.push('## Directories:');
-        directories.forEach(dir => {
-          result.push(`- 📁 **${dir.name}/**`);
-        });
-        result.push('');
-      }
-      
-      if (files.length > 0) {
-        result.push('## Files:');
-        files.forEach(file => {
-          const relativePath = path ? `${path}/${file.name}` : file.name;
-          result.push(`- 📄 **${file.name}** (${relativePath})`);
-        });
-      }
-      
-      if (result.length === 1) {
-        result.push('No files or directories found.');
-      }
-      
-      return result.join('\n');
-    } catch (error) {
-      throw new McpError(
-        ErrorCode.InternalError,
-        `Failed to list documentation: ${error}`
-      );
-    }
-  }
-
-  private async getDocumentation(filePath: string): Promise<string> {
-    try {
-      const fullPath = join(this.docsPath, filePath);
-      const content = await readFile(fullPath, 'utf-8');
-      return `# ${filePath}\n\n${content}`;
-    } catch (error) {
-      throw new McpError(
-        ErrorCode.InternalError,
-        `Failed to read documentation file: ${error}`
-      );
-    }
-  }
-
-  private async searchDocumentation(query: string, caseSensitive: boolean): Promise<string> {
+  private usePatternFlyDocs = async (urlList: string[]): Promise<string> => {
     try {
       const results: string[] = [];
-      await this.searchInDirectory(this.docsPath, query, caseSensitive, results);
-      
-      if (results.length === 0) {
-        return `No results found for: "${query}"`;
-      }
-      
-      return `# Search Results for "${query}"\n\n${results.join('\n\n')}`;
-    } catch (error) {
-      throw new McpError(
-        ErrorCode.InternalError,
-        `Failed to search documentation: ${error}`
-      );
-    }
-  }
 
-  private async searchInDirectory(dirPath: string, query: string, caseSensitive: boolean, results: string[]): Promise<void> {
-    const entries = await readdir(dirPath, { withFileTypes: true });
-    
-    for (const entry of entries) {
-      const fullPath = join(dirPath, entry.name);
-      
-      if (entry.isDirectory()) {
-        await this.searchInDirectory(fullPath, query, caseSensitive, results);
-      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+      for (const url of urlList) {
         try {
-          const content = await readFile(fullPath, 'utf-8');
-          const searchContent = caseSensitive ? content : content.toLowerCase();
-          const searchQuery = caseSensitive ? query : query.toLowerCase();
-          
-          if (searchContent.includes(searchQuery)) {
-            const relativePath = relative(this.docsPath, fullPath);
-            const lines = content.split('\n');
-            const matchingLines: string[] = [];
-            
-            lines.forEach((line, index) => {
-              const searchLine = caseSensitive ? line : line.toLowerCase();
-              if (searchLine.includes(searchQuery)) {
-                matchingLines.push(`Line ${index + 1}: ${line.trim()}`);
-              }
-            });
-            
-            results.push(`## ${relativePath}\n${matchingLines.slice(0, 5).join('\n')}`);
-          }
-        } catch (error) {
-          // Skip files that can't be read
-        }
-      }
-    }
-  }
-
-  private async getQuickRules(category?: string): Promise<string> {
-    try {
-      if (!category) {
-        // Return overview of all categories
-        const overview = await readFile(join(this.docsPath, 'README.md'), 'utf-8');
-        return `# PatternFly Quick Rules Overview\n\n${overview}`;
-      }
-      
-      // Return specific category rules
-      const categoryPaths: Record<string, string> = {
-        'setup': 'setup/README.md',
-        'guidelines': 'guidelines/README.md',
-        'components': 'components/README.md',
-        'component-groups': 'component-groups/README.md',
-        'charts': 'charts/README.md',
-        'chatbot': 'chatbot/README.md',
-        'resources': 'resources/external-links.md',
-        'troubleshooting': 'troubleshooting/common-issues.md'
-      };
-      
-      const filePath = categoryPaths[category.toLowerCase()];
-      if (!filePath) {
-        return `Unknown category: ${category}. Available categories: ${Object.keys(categoryPaths).join(', ')}`;
-      }
-      
-      try {
-        const content = await readFile(join(this.docsPath, filePath), 'utf-8');
-        return `# ${category.charAt(0).toUpperCase() + category.slice(1)} Rules\n\n${content}`;
-      } catch (error) {
-        return `Category "${category}" documentation not found at ${filePath}`;
-      }
-    } catch (error) {
-      throw new McpError(
-        ErrorCode.InternalError,
-        `Failed to get quick rules: ${error}`
-      );
-    }
-  }
-
-  private async getAllStandards(includeExamples: boolean, sections: string[]): Promise<string> {
-    try {
-      const result: string[] = [];
-      result.push('# Comprehensive PatternFly Standards and Guidelines\n');
-      
-             // Define all standard files to read (organized by section in alphabetical order)
-       const standardFiles: { section: string; title: string; path: string }[] = [
-        { section: 'overview', title: 'Overview', path: 'README.md' },
-        { section: 'charts', title: 'Charts Standards', path: 'charts/README.md' },
-         { section: 'chatbot', title: 'Chatbot Standards', path: 'chatbot/README.md' },
-         { section: 'component-groups', title: 'Component Groups', path: 'component-groups/README.md' },
-         { section: 'components', title: 'Data Display Components', path: 'components/data-display/README.md' },
-         { section: 'components', title: 'Layout Components', path: 'components/layout/README.md' },
-         { section: 'components', title: 'Table Component', path: 'components/data-display/table.md' },
-         { section: 'guidelines', title: 'Core Guidelines', path: 'guidelines/README.md' },
-         { section: 'guidelines', title: 'AI Prompt Guidance', path: 'guidelines/ai-prompt-guidance.md' },
-         { section: 'guidelines', title: 'Component Architecture', path: 'guidelines/component-architecture.md' },
-         { section: 'guidelines', title: 'Deployment Guide', path: 'guidelines/deployment-guide.md' },
-         { section: 'guidelines', title: 'Styling Standards', path: 'guidelines/styling-standards.md' },
-         { section: 'resources', title: 'External Links', path: 'resources/external-links.md' },
-         { section: 'resources', title: 'Local Files', path: 'resources/local-files.md' },
-         { section: 'setup', title: 'Setup Standards', path: 'setup/README.md' },
-         { section: 'setup', title: 'Development Environment', path: 'setup/development-environment.md' },
-         { section: 'setup', title: 'Quick Start Guide', path: 'setup/quick-start.md' },
-         { section: 'troubleshooting', title: 'Common Issues & Solutions', path: 'troubleshooting/common-issues.md' },
-       ];
-      
-      // Filter sections if specified
-      const filesToRead = sections.length > 0 
-        ? standardFiles.filter(file => sections.includes(file.section) || file.section === 'overview')
-        : standardFiles;
-      
-      // Read and compile all standards
-      for (const fileInfo of filesToRead) {
-        try {
-          const content = await readFile(join(this.docsPath, fileInfo.path), 'utf-8');
-          
-          result.push(`## ${fileInfo.title}\n`);
-          
-          if (!includeExamples) {
-            // Filter out code examples and detailed explanations
-            const lines = content.split('\n');
-            const filteredLines: string[] = [];
-            let inCodeBlock = false;
-            let skipDetailedSection = false;
-            
-            for (const line of lines) {
-              // Skip code blocks if examples not wanted
-              if (line.startsWith('```')) {
-                inCodeBlock = !inCodeBlock;
-                if (!includeExamples) continue;
-              }
-              
-              if (inCodeBlock && !includeExamples) continue;
-              
-              // Skip detailed example sections
-              if (line.match(/^###?\s+(Example|Usage|Code|Implementation)/i)) {
-                skipDetailedSection = true;
-                if (!includeExamples) continue;
-              }
-              
-              if (line.match(/^#{1,6}\s+/) && !line.match(/^###?\s+(Example|Usage|Code|Implementation)/i)) {
-                skipDetailedSection = false;
-              }
-              
-              if (skipDetailedSection && !includeExamples) continue;
-              
-              filteredLines.push(line);
+          // Check if it's a URL or a local file path
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            // Handle as URL
+            const response = await fetch(url);
+            if (!response.ok) {
+              results.push(`❌ Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+              continue;
             }
-            
-            result.push(filteredLines.join('\n'));
+
+            const content = await response.text();
+            results.push(`# Documentation from ${url}\n\n${content}`);
           } else {
-            result.push(content);
+            // Handle as local file path
+            try {
+              const content = await readFile(url, 'utf-8');
+              results.push(`# Documentation from ${url}\n\n${content}`);
+            } catch (fileError) {
+              results.push(`❌ Failed to read local file ${url}: ${fileError}`);
+            }
           }
-          
-          result.push('\n---\n');
         } catch (error) {
-          result.push(`⚠️ Could not read ${fileInfo.title} (${fileInfo.path})\n\n---\n`);
+          results.push(`❌ Error processing ${url}: ${error}`);
         }
       }
-      
-      // Add summary at the end
-      result.push('## Summary\n');
-      result.push('This document contains all PatternFly standards and guidelines for React development.');
-      result.push('Key points to remember:');
-      result.push('- Always use PatternFly v6 components and classes');
-      result.push('- Follow accessibility requirements (WCAG 2.1 AA)');
-      result.push('- Use semantic design tokens for styling');
-      result.push('- Implement proper error and loading states');
-      result.push('- Reference official PatternFly documentation for latest updates');
-      
-      return result.join('\n');
+
+      return results.join('\n\n---\n\n');
     } catch (error) {
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to get all standards: ${error}`
+        `Failed to fetch documentation: ${error}`
+      );
+    }
+  }
+
+  private async fetchDocs(urls: string[]): Promise<string> {
+    try {
+      const results: string[] = [];
+
+      for (const url of urls) {
+        try {
+          // Check if it's a URL or a local file path
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            // Handle as URL
+            const response = await fetch(url);
+            if (!response.ok) {
+              results.push(`❌ Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+              continue;
+            }
+
+            const content = await response.text();
+            results.push(`# Documentation from ${url}\n\n${content}`);
+          } else {
+            // Handle as local file path
+            try {
+              const content = await readFile(url, 'utf-8');
+              results.push(`# Documentation from ${url}\n\n${content}`);
+            } catch (fileError) {
+              results.push(`❌ Failed to read local file ${url}: ${fileError}`);
+            }
+          }
+        } catch (error) {
+          results.push(`❌ Error processing ${url}: ${error}`);
+        }
+      }
+
+      return results.join('\n\n---\n\n');
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to fetch documentation: ${error}`
       );
     }
   }
@@ -284,83 +123,60 @@ class PatternflyMcpServer {
       return {
         tools: [
           {
-            name: 'list_documentation',
-            description: 'List available PatternFly documentation categories and files',
+            name: 'usePatternFlyDocs',
+            description:
+              `You must use this tool to answer any questions related to PatternFly components or documentation.
+               
+              The description of the tool contains links to .md files or local file paths that the user has made available.
+
+              ${ComponentDocs.join('\n')}
+              ${LayoutDocs.join('\n')}
+              ${ChartDocs.join('\n')}
+              [@patternfly/react-charts](${join(this.docsPath, 'charts', 'README.md')})
+              [@patternfly/react-chatbot](${join(this.docsPath, 'chatbot', 'README.md')})
+              [@patternfly/react-component-groups](${join(this.docsPath, 'component-groups', 'README.md')})
+              [@patternfly/react-components](${join(this.docsPath, 'components', 'README.md')})
+              [@patternfly/react-guidelines](${join(this.docsPath, 'guidelines', 'README.md')})
+              [@patternfly/react-resources](${join(this.docsPath, 'resources', 'README.md')})
+              [@patternfly/react-setup](${join(this.docsPath, 'setup', 'README.md')})
+              [@patternfly/react-troubleshooting](${join(this.docsPath, 'troubleshooting', 'README.md')})
+              
+              1. Pick the most suitable URL from the above list, and use that as the "urlList" argument for this tool's execution, to get the docs content. If it's just one, let it be an array with one URL.
+              2. Analyze the URLs listed in the .md file
+              3. Then fetch specific documentation pages relevant to the user's question with the subsequent tool call.`,
             inputSchema: {
               type: 'object',
               properties: {
-                path: {
-                  type: 'string',
-                  description: 'Optional path to list contents of specific directory (relative to documentation)',
-                },
-              },
-            },
-          },
-          {
-            name: 'get_documentation',
-            description: 'Get the content of a specific PatternFly documentation file',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                file_path: {
-                  type: 'string',
-                  description: 'Path to the documentation file (relative to documentation)',
-                },
-              },
-              required: ['file_path'],
-            },
-          },
-          {
-            name: 'search_documentation',
-            description: 'Search for specific text across all PatternFly documentation files',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                query: {
-                  type: 'string',
-                  description: 'Text to search for in the documentation',
-                },
-                case_sensitive: {
-                  type: 'boolean',
-                  description: 'Whether the search should be case sensitive',
-                  default: false,
-                },
-              },
-              required: ['query'],
-            },
-          },
-          {
-            name: 'get_quick_rules',
-            description: 'Get essential PatternFly development rules and guidelines',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                category: {
-                  type: 'string',
-                  description: 'Specific category of rules (charts, chatbot, component-groups, components, guidelines, resources, setup, troubleshooting)',
-                },
-              },
-            },
-          },
-          {
-            name: 'get_all_standards',
-            description: 'Get comprehensive PatternFly standards and guidelines from all documentation',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                include_examples: {
-                  type: 'boolean',
-                  description: 'Whether to include code examples and detailed explanations',
-                  default: true,
-                },
-                sections: {
+                urlList: {
                   type: 'array',
-                  description: 'Specific sections to include (charts, chatbot, component-groups, components, guidelines, resources, setup, troubleshooting). If not provided, includes all sections.',
                   items: {
                     type: 'string',
                   },
+                  description: 'The list of urls to fetch the documentation from',
                 },
               },
+              required: ['urlList'],
+              additionalProperties: false,
+              $schema: 'http://json-schema.org/draft-07/schema#',
+            },
+          },
+          {
+            name: 'fetchDocs',
+            description: 'Fetch documentation for one or more URLs extracted from previous tool calls responses. The URLs should be passed as an array in the "urls" argument.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                urls: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                  },
+                  description: 'The list of URLs to fetch documentation from',
+                },
+              },
+              required: ['urls'],
+              additionalProperties: false,
+              $schema: 'http://json-schema.org/draft-07/schema#',
             },
           },
         ],
@@ -373,28 +189,15 @@ class PatternflyMcpServer {
 
       try {
         switch (name) {
-          case 'list_documentation': {
-            const path = args?.path as string || '';
-            const result = await this.listDocumentation(path);
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: result,
-                },
-              ],
-            };
-          }
-
-          case 'get_documentation': {
-            const filePath = args?.file_path as string;
-            if (!filePath) {
+          case 'usePatternFlyDocs': {
+            const urlList = args?.urlList ? args.urlList as string[] : null;
+            if (!urlList || !Array.isArray(urlList)) {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                'Missing required parameter: file_path'
+                `Missing required parameter: urlList (must be an array of strings): ${urlList}`
               );
             }
-            const result = await this.getDocumentation(filePath);
+            const result = await this.usePatternFlyDocs(urlList);
             return {
               content: [
                 {
@@ -405,48 +208,20 @@ class PatternflyMcpServer {
             };
           }
 
-          case 'search_documentation': {
-            const query = args?.query as string;
-            const caseSensitive = args?.case_sensitive as boolean || false;
-            if (!query) {
+          case 'fetchDocs': {
+            const urls = args?.urls ? args.urls as string[] : null;
+            if (!urls || !Array.isArray(urls)) {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                'Missing required parameter: query'
+                `Missing required parameter: urls (must be an array of strings): ${urls}`
               );
             }
-            const result = await this.searchDocumentation(query, caseSensitive);
+            const result = await this.fetchDocs(urls);
             return {
               content: [
                 {
                   type: 'text',
-                  text: result,
-                },
-              ],
-            };
-          }
-
-          case 'get_quick_rules': {
-            const category = args?.category as string;
-            const result = await this.getQuickRules(category);
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: result,
-                },
-              ],
-            };
-          }
-
-          case 'get_all_standards': {
-            const includeExamples = args?.include_examples !== false; // Default to true
-            const sections = args?.sections as string[] || [];
-            const result = await this.getAllStandards(includeExamples, sections);
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: result,
+                  text: urls.join('\n'),
                 },
               ],
             };
@@ -493,4 +268,4 @@ const server = new PatternflyMcpServer();
 server.run().catch((error) => {
   console.error('Failed to start server:', error);
   process.exit(1);
-}); 
+});

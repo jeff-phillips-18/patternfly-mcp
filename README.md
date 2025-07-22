@@ -181,7 +181,6 @@ Use `get_documentation` to retrieve specific files:
 Use `search_documentation` to find relevant rules:
 - Find all references to "v6": `search_documentation` with `query: "v6"`
 - Search for accessibility rules: `search_documentation` with `query: "accessibility"`
-
 ### Quick Access to Essential Rules
 Use `get_quick_rules` for common categories:
 - Overview of all rules: `get_quick_rules` (no parameters)
