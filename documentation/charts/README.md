@@ -75,16 +75,44 @@ Module not found: Can't resolve '@patternfly/react-charts'
 
 ## Chart Implementation Rules
 
+### Best Practices
+
+### Color families
+- Chart color families include
+  - red-orange
+  - orange
+  - yellow
+  - teal
+  - green
+  - blue
+  - purple
+  - black
+- Use the same brightness of colors first, then use other brightness
+  - Base: 300
+  - Lightest: 100
+  - Darkest: 500
+  - Second-lightest: 200
+  - Second-darkest: 400
+ - Use PatternFly tokens to define your color variables
+   - --pf-t-chart-color-[color-family]-[brightness]
+     - example: --pf-t-chart-color-blue-300
+- When selecting colors for your chart, adhere to these general rules:
+  - Within a color family, use the base color first. Then use the other lighter and darker hues.
+  - Some families have predetermined uses:
+    - Blue: Use to show success.
+    - Red-orange: Use to show failure. Do not use this family unless you're communicating failure.
+    - Other colors: Use for neutral purposes or categories.
+  
 ### Color Rules
 - ✅ **Use PatternFly chart color tokens** - For consistency with design system
 - ❌ **Don't use hardcoded colors** - Use design tokens instead
 
 ```jsx
 // ✅ Correct - Use PatternFly color tokens
-const chartColors = [
-  'var(--pf-t--chart--color--blue--300)',
-  'var(--pf-t--chart--color--green--300)',
-  'var(--pf-t--chart--color--orange--300)'
+const chartBlueColor = [
+  'var(--pf-t--chart--color--[color family 1]--300)',
+  'var(--pf-t--chart--color--[color family 2]--300)',
+  'var(--pf-t--chart--color--[color family 3]--300)'
 ];
 
 <ChartDonut data={data} colorScale={chartColors} />
@@ -235,7 +263,10 @@ const LazyChart = lazy(() => import('./HeavyChart'));
 ## Quick Reference
 - **[PatternFly Charts README](https://github.com/patternfly/patternfly-react/tree/main/packages/react-charts#readme)** - Installation and usage
 - **[Victory.js Documentation](https://formidable.com/open-source/victory/)** - Chart library documentation
-- **[PatternFly Chart Guidelines](https://www.patternfly.org/charts/about)** - Design guidelines
+- **[PatternFly Chart Guidelines](https://www.patternfly.org/charts/about-charts)** - Design guidelines
+- **[PatternFly Chart Colors](https://www.patternfly.org/charts/colors-for-charts)** - Colors for charts
+
+
 
 ## Reference Documentation
 
