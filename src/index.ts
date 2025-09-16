@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import { ComponentDocs } from './ComponentDocs.js';
 import { LayoutDocs } from './LayoutDocs.js';
 import { ChartDocs } from './ChartDocs.js';
+import packageJson from '../package.json' with { type: 'json' };
 
 class PatternflyMcpServer {
   private server: Server;
@@ -21,8 +22,8 @@ class PatternflyMcpServer {
   constructor() {
     this.server = new Server(
       {
-        name: '@jephilli-patternfly-docs/mcp',
-        version: '1.0.0',
+        name: packageJson.name,
+        version: packageJson.version,
       },
       {
         capabilities: {
