@@ -72,37 +72,18 @@ The MCP server communicates over stdio and provides access to PatternFly documen
 
 ### Available Tools
 
-#### `list_documentation`
-Lists available PatternFly documentation categories and files.
+#### `usePatternFlyDocs`
+Provides a list of URLs to `llms.txt` files that should be chosen to read for a particular context. These `llms.txt` files contain
+a list of URLs to be read by the following `fetchDocs` tool.
 
 **Parameters:**
-- `path` (string, optional): Specific directory path to list (relative to documentation)
+- `urlList` (array of strings, required): Specific directory path to list (relative to the `llms-files` directory)
 
-#### `get_documentation`
-Retrieves the full content of a specific PatternFly documentation file.
-
-**Parameters:**
-- `file_path` (string, required): Path to the documentation file (relative to documentation)
-
-#### `search_documentation`
-Searches for specific text across all PatternFly documentation files.
+#### `fetchDocs`
+Retrieves the full content of a specific PatternFly `llms.txt` files.
 
 **Parameters:**
-- `query` (string, required): Text to search for in the documentation
-- `case_sensitive` (boolean, optional): Whether the search should be case sensitive (default: false)
-
-#### `get_quick_rules`
-Gets essential PatternFly development rules and guidelines for specific categories.
-
-**Parameters:**
-- `category` (string, optional): Specific category of rules (charts, chatbot, component-groups, components, guidelines, resources, setup, troubleshooting). If not provided, returns overview of all categories.
-
-#### `get_all_standards`
-Gets comprehensive PatternFly standards and guidelines from all documentation in a single response.
-
-**Parameters:**
-- `include_examples` (boolean, optional): Whether to include code examples and detailed explanations (default: true)
-- `sections` (array, optional): Specific sections to include (charts, chatbot, component-groups, components, guidelines, resources, setup, troubleshooting). If not provided, includes all sections.
+- `urls` (array of strings, required): Path to the documentation file (relative to documentation)
 
 ### Example Client Integration
 
@@ -114,7 +95,7 @@ Example configuration for MCP clients using npx (see `mcp-config-example.json`):
   "mcpServers": {
     "patternfly-docs": {
       "command": "npx",
-      "args": ["-y", "@jephilli-patternfly-docs/mcp@latest"]
+      "args": ["-y", "@jephilli-patternfly-docs/mcp@latest"],
       "description": "PatternFly React development rules and documentation"
     }
   }
@@ -135,63 +116,20 @@ For local development (without npx):
 }
 ```
 
-## Project Structure
+### Example test commands using the inspector-cli:
 
+#### usePatternFlyDocs
 ```
-patternfly-mcp/
-├── documentation/ # PatternFly development rules and guidelines
-├── src/
-│   └── index.ts          # Main server implementation
-├── dist/                 # Compiled JavaScript (after build)
-├── package.json          # Project dependencies and scripts
-├── tsconfig.json         # TypeScript configuration
-├── mcp-config-example.json # Example MCP client configuration
-├── .gitignore           # Git ignore patterns
-└── README.md            # This file
+npx @modelcontextprotocol/inspector-cli --config /Users/jeffreyphillips/.cursor/mcp.json --server patternfly-mcp-server --cli --method tools/call --tool-name usePatternFlyDocs --tool-arg urlList='["/Users/jeffreyphillips/repositories/patternfly-mcp/documentation/chatbot/README.md"]'
+```
+
+#### fetchDocs
+```
+npx @modelcontextprotocol/inspector-cli --config /Users/jeffreyphillips/.cursor/mcp.json --server patternfly-mcp-server --cli --method tools/call --tool-name fetchDocs --tool-arg urls='["https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/design-guidelines/components/about-modal/about-modal.md", "https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/accessibility/components/about-modal/about-modal.md"]'
 ```
 
 ## Documentation Structure
-
-The server provides access to the PatternFly documentation located in `documentation/`:
-
-- **charts/** - PatternFly Charts implementation rules
-- **chatbot/** - PatternFly Chatbot component rules
-- **component-groups/** - Component grouping and organization patterns
-- **components/** - Component-specific usage rules and best practices
-- **guidelines/** - Core development principles and standards
-- **resources/** - External links and local documentation references
-- **setup/** - Project initialization and environment setup rules
-- **troubleshooting/** - Common issues and solutions
-
-## Example Usage
-
-### Browse Available Documentation
-Use `list_documentation` to see what's available:
-- List root categories: `list_documentation` (no parameters)
-- List specific directory: `list_documentation` with `path: "guidelines"`
-
-### Get Specific Rules
-Use `get_documentation` to retrieve specific files:
-- Get setup rules: `get_documentation` with `file_path: "setup/README.md"`
-- Get styling standards: `get_documentation` with `file_path: "guidelines/styling-standards.md"`
-- Get component groups rules: `get_documentation` with `file_path: "component-groups/README.md"`
-- Get external links: `get_documentation` with `file_path: "resources/external-links.md"`
-
-### Search for Specific Information
-Use `search_documentation` to find relevant rules:
-- Find all references to "v6": `search_documentation` with `query: "v6"`
-- Search for accessibility rules: `search_documentation` with `query: "accessibility"`
-### Quick Access to Essential Rules
-Use `get_quick_rules` for common categories:
-- Overview of all rules: `get_quick_rules` (no parameters)
-- Specific category: `get_quick_rules` with `category: "components"`
-
-### Comprehensive Standards Access
-Use `get_all_standards` to get all PatternFly standards in one response:
-- All standards with examples: `get_all_standards` (no parameters)
-- All standards without code examples: `get_all_standards` with `include_examples: false`
-- Only specific sections: `get_all_standards` with `sections: ["components", "guidelines"]`
-- Component groups and charts only: `get_all_standards` with `sections: ["component-groups", "charts"]`
+TBD
 
 ## Publishing
 

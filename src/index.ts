@@ -18,6 +18,7 @@ import packageJson from '../package.json' with { type: 'json' };
 
 class PatternflyMcpServer {
   private server: Server;
+  private useDocsHost = false;
 
   constructor() {
     this.server = new Server(
@@ -32,11 +33,17 @@ class PatternflyMcpServer {
       }
     );
 
+    // Check for args telling us to use local data
+    if (process.argv.includes('--docs-host')) {
+      this.useDocsHost = true;
+    }
+
     this.setupToolHandlers();
     this.setupErrorHandling();
   }
 
   private readonly docsPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'documentation');
+  private readonly llmsFilesPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'llms-files');
 
   private usePatternFlyDocs = async (urlList: string[]): Promise<string> => {
     try {
@@ -55,6 +62,15 @@ class PatternflyMcpServer {
 
             const content = await response.text();
             results.push(`# Documentation from ${url}\n\n${content}`);
+          } else if (this.useDocsHost ) {
+            // Handle as local file path
+            const filePath = join(this.llmsFilesPath, url);
+            try {
+              const content = await readFile(filePath, 'utf-8');
+              results.push(`# Documentation from ${filePath}\n\n${content}`);
+            } catch (fileError) {
+              results.push(`❌ Failed to read local file ${url} from ${this.llmsFilesPath} :  ${filePath}: ${fileError}`);
+            }
           } else {
             // Handle as local file path
             try {
@@ -95,6 +111,15 @@ class PatternflyMcpServer {
 
             const content = await response.text();
             results.push(`# Documentation from ${url}\n\n${content}`);
+          } else if (this.useDocsHost) {
+            // Handle as local file path
+            const filePath = join(this.llmsFilesPath, url);
+            try {
+              const content = await readFile(filePath, 'utf-8');
+              results.push(`# Documentation from ${filePath}\n\n${content}`);
+            } catch (fileError) {
+              results.push(`❌ Failed to read local file ${url} from ${this.llmsFilesPath} :  ${filePath}: ${fileError}`);
+            }
           } else {
             // Handle as local file path
             try {
@@ -128,22 +153,28 @@ class PatternflyMcpServer {
             description:
               `You must use this tool to answer any questions related to PatternFly components or documentation.
 
-              The description of the tool contains links to .md files or local file paths that the user has made available.
+              The description of the tool contains links to ${this.useDocsHost ? 'llms.txt' : '.md'} files or local file paths that the user has made available.
 
-              ${ComponentDocs.join('\n')}
-              ${LayoutDocs.join('\n')}
-              ${ChartDocs.join('\n')}
-              [@patternfly/react-charts](${join(this.docsPath, 'charts', 'README.md')})
-              [@patternfly/react-chatbot](${join(this.docsPath, 'chatbot', 'README.md')})
-              [@patternfly/react-component-groups](${join(this.docsPath, 'component-groups', 'README.md')})
-              [@patternfly/react-components](${join(this.docsPath, 'components', 'README.md')})
-              [@patternfly/react-guidelines](${join(this.docsPath, 'guidelines', 'README.md')})
-              [@patternfly/react-resources](${join(this.docsPath, 'resources', 'README.md')})
-              [@patternfly/react-setup](${join(this.docsPath, 'setup', 'README.md')})
-              [@patternfly/react-troubleshooting](${join(this.docsPath, 'troubleshooting', 'README.md')})
+              ${this.useDocsHost ?
+                `[@patternfly/react-core@6.0.0^](${join('react-core', '6.0.0', 'llms.txt')})`
+                :
+                `
+                  ${ComponentDocs.join('\n')}
+                  ${LayoutDocs.join('\n')}
+                  ${ChartDocs.join('\n')}
+                  [@patternfly/react-charts](${join(this.docsPath, 'charts', 'README.md')})
+                  [@patternfly/react-chatbot](${join(this.docsPath, 'chatbot', 'README.md')})
+                  [@patternfly/react-component-groups](${join(this.docsPath, 'component-groups', 'README.md')})
+                  [@patternfly/react-components](${join(this.docsPath, 'components', 'README.md')})
+                  [@patternfly/react-guidelines](${join(this.docsPath, 'guidelines', 'README.md')})
+                  [@patternfly/react-resources](${join(this.docsPath, 'resources', 'README.md')})
+                  [@patternfly/react-setup](${join(this.docsPath, 'setup', 'README.md')})
+                  [@patternfly/react-troubleshooting](${join(this.docsPath, 'troubleshooting', 'README.md')})
+                `
+              }
 
               1. Pick the most suitable URL from the above list, and use that as the "urlList" argument for this tool's execution, to get the docs content. If it's just one, let it be an array with one URL.
-              2. Analyze the URLs listed in the .md file
+              2. Analyze the URLs listed in the ${this.useDocsHost ? 'llms.txt' : '.md'} file
               3. Then fetch specific documentation pages relevant to the user's question with the subsequent tool call.`,
             inputSchema: {
               type: 'object',
@@ -222,7 +253,7 @@ class PatternflyMcpServer {
               content: [
                 {
                   type: 'text',
-                  text: urls.join('\n'),
+                  text: result,
                 },
               ],
             };
