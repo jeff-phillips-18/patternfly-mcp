@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import { ComponentDocs } from './ComponentDocs.js';
 import { LayoutDocs } from './LayoutDocs.js';
 import { ChartDocs } from './ChartDocs.js';
+import { memo } from './helpers.js';
 import packageJson from '../package.json' with { type: 'json' };
 
 class PatternflyMcpServer {
@@ -45,47 +46,134 @@ class PatternflyMcpServer {
   private readonly docsPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'documentation');
   private readonly llmsFilesPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'llms-files');
 
+  // Formatting and URL detection
+  private static readonly SEPARATOR = '\n\n---\n\n';
+  private static readonly URL_RE = /^(https?:)\/\//i;
+
+  /**
+   * Resolve a local path depending on --docs-host flag.
+   */
+  private resolveLocalPath(relativeOrAbsolute: string): string {
+    return this.useDocsHost ? join(this.llmsFilesPath, relativeOrAbsolute) : relativeOrAbsolute;
+  }
+
+  // Cache configuration
+  private readonly CACHE_TTL_MS = 10 * 60 * 1000; // 10 min sliding cache
+  private readonly URL_CACHE_TTL_MS = 30 * 60 * 1000; // 30 min sliding cache for external URLs
+
+  private createUrlMemo() {
+    return memo(this.fetchUrl.bind(this), {
+      cacheLimit: 50,
+      expire: this.URL_CACHE_TTL_MS,
+      cacheErrors: false
+    });
+  }
+
+  private createFileMemo() {
+    return memo(this.readLocalFile.bind(this), {
+      cacheLimit: 25,
+      expire: this.CACHE_TTL_MS
+    });
+  }
+
+  private memoizedFetchUrl = this.createUrlMemo();
+
+  private memoizedReadFile = this.createFileMemo();
+
+  private resetUrlCache() {
+    this.memoizedFetchUrl = this.createUrlMemo();
+  }
+
+  private resetFileCache() {
+    this.memoizedReadFile = this.createFileMemo();
+  }
+
+  // Cooldown for clearCache (default 5s; override via DOC_MCP_CLEAR_COOLDOWN_MS)
+  private static readonly CLEAR_CACHE_COOLDOWN_MS = Number(process.env.DOC_MCP_CLEAR_COOLDOWN_MS ?? 5000);
+  private lastClearCacheAt: number | null = null;
+
+  private assertClearCacheNotRateLimited() {
+    const now = Date.now();
+    const last = this.lastClearCacheAt ?? 0;
+    const remaining = (last + PatternflyMcpServer.CLEAR_CACHE_COOLDOWN_MS) - now;
+    if (remaining > 0) {
+      const code = (ErrorCode as any).ResourceExhausted ?? ErrorCode.InvalidParams;
+      const seconds = Math.ceil(remaining / 1000);
+      throw new McpError(code, `clearCache is cooling down; try again in ${seconds}s`);
+    }
+  }
+
+  private markCacheCleared() {
+    this.lastClearCacheAt = Date.now();
+  }
+
+  // Helper methods for memoization
+  private async fetchUrl(url: string): Promise<string> {
+    const controller = new AbortController();
+    const timeoutMs = Number(process.env.DOC_MCP_FETCH_TIMEOUT_MS ?? 15_000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'Accept': 'text/plain, text/markdown, */*' }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+      }
+      return await response.text();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private async readLocalFile(filePath: string): Promise<string> {
+    return await readFile(filePath, 'utf-8');
+  }
+
+  /**
+   * Load a single item from URL or local file and return header + content.
+   * Throws on failure; caller formats errors uniformly.
+   */
+  private async loadOne(pathOrUrl: string): Promise<{ header: string; content: string }> {
+    if (PatternflyMcpServer.URL_RE.test(pathOrUrl)) {
+      const content = await this.memoizedFetchUrl(pathOrUrl);
+      return { header: `# Documentation from ${pathOrUrl}`, content };
+    }
+    const filePath = this.resolveLocalPath(pathOrUrl);
+    const content = await this.memoizedReadFile(filePath);
+    return { header: `# Documentation from ${filePath}`, content };
+  }
+
+  /**
+   * Normalize inputs, load all in parallel, and return the joined string.
+   */
+  private async processDocs(inputs: string[]): Promise<string> {
+    const seen = new Set<string>();
+    const list = inputs
+      .map(s => String(s).trim())
+      .filter(Boolean)
+      .filter(s => { if (seen.has(s)) return false; seen.add(s); return true; });
+
+    const settled = await Promise.allSettled(list.map(item => this.loadOne(item)));
+
+    const parts: string[] = [];
+    settled.forEach((res, idx) => {
+      const original = list[idx];
+      if (res.status === 'fulfilled') {
+        const { header, content } = res.value;
+        parts.push(`${header}\n\n${content}`);
+      } else {
+        parts.push(`❌ Failed to load ${original}: ${res.reason}`);
+      }
+    });
+
+    return parts.join(PatternflyMcpServer.SEPARATOR);
+  }
+
+
   private usePatternFlyDocs = async (urlList: string[]): Promise<string> => {
     try {
-      const results: string[] = [];
-
-      for (const url of urlList) {
-        try {
-          // Check if it's a URL or a local file path
-          if (url.startsWith('http://') || url.startsWith('https://')) {
-            // Handle as URL
-            const response = await fetch(url);
-            if (!response.ok) {
-              results.push(`❌ Failed to fetch ${url}: ${response.status} ${response.statusText}`);
-              continue;
-            }
-
-            const content = await response.text();
-            results.push(`# Documentation from ${url}\n\n${content}`);
-          } else if (this.useDocsHost ) {
-            // Handle as local file path
-            const filePath = join(this.llmsFilesPath, url);
-            try {
-              const content = await readFile(filePath, 'utf-8');
-              results.push(`# Documentation from ${filePath}\n\n${content}`);
-            } catch (fileError) {
-              results.push(`❌ Failed to read local file ${url} from ${this.llmsFilesPath} :  ${filePath}: ${fileError}`);
-            }
-          } else {
-            // Handle as local file path
-            try {
-              const content = await readFile(url, 'utf-8');
-              results.push(`# Documentation from ${url}\n\n${content}`);
-            } catch (fileError) {
-              results.push(`❌ Failed to read local file ${url}: ${fileError}`);
-            }
-          }
-        } catch (error) {
-          results.push(`❌ Error processing ${url}: ${error}`);
-        }
-      }
-
-      return results.join('\n\n---\n\n');
+      return await this.processDocs(urlList);
     } catch (error) {
       throw new McpError(
         ErrorCode.InternalError,
@@ -96,45 +184,7 @@ class PatternflyMcpServer {
 
   private async fetchDocs(urls: string[]): Promise<string> {
     try {
-      const results: string[] = [];
-
-      for (const url of urls) {
-        try {
-          // Check if it's a URL or a local file path
-          if (url.startsWith('http://') || url.startsWith('https://')) {
-            // Handle as URL
-            const response = await fetch(url);
-            if (!response.ok) {
-              results.push(`❌ Failed to fetch ${url}: ${response.status} ${response.statusText}`);
-              continue;
-            }
-
-            const content = await response.text();
-            results.push(`# Documentation from ${url}\n\n${content}`);
-          } else if (this.useDocsHost) {
-            // Handle as local file path
-            const filePath = join(this.llmsFilesPath, url);
-            try {
-              const content = await readFile(filePath, 'utf-8');
-              results.push(`# Documentation from ${filePath}\n\n${content}`);
-            } catch (fileError) {
-              results.push(`❌ Failed to read local file ${url} from ${this.llmsFilesPath} :  ${filePath}: ${fileError}`);
-            }
-          } else {
-            // Handle as local file path
-            try {
-              const content = await readFile(url, 'utf-8');
-              results.push(`# Documentation from ${url}\n\n${content}`);
-            } catch (fileError) {
-              results.push(`❌ Failed to read local file ${url}: ${fileError}`);
-            }
-          }
-        } catch (error) {
-          results.push(`❌ Error processing ${url}: ${error}`);
-        }
-      }
-
-      return results.join('\n\n---\n\n');
+      return await this.processDocs(urls);
     } catch (error) {
       throw new McpError(
         ErrorCode.InternalError,
@@ -146,19 +196,18 @@ class PatternflyMcpServer {
   private setupToolHandlers(): void {
     // List available tools
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      return {
-        tools: [
-          {
-            name: 'usePatternFlyDocs',
-            description:
-              `You must use this tool to answer any questions related to PatternFly components or documentation.
+      const tools: any[] = [
+        {
+          name: 'usePatternFlyDocs',
+          description:
+            `You must use this tool to answer any questions related to PatternFly components or documentation.
 
               The description of the tool contains links to ${this.useDocsHost ? 'llms.txt' : '.md'} files or local file paths that the user has made available.
 
               ${this.useDocsHost ?
-                `[@patternfly/react-core@6.0.0^](${join('react-core', '6.0.0', 'llms.txt')})`
-                :
-                `
+              `[@patternfly/react-core@6.0.0^](${join('react-core', '6.0.0', 'llms.txt')})`
+              :
+              `
                   ${ComponentDocs.join('\n')}
                   ${LayoutDocs.join('\n')}
                   ${ChartDocs.join('\n')}
@@ -171,48 +220,62 @@ class PatternflyMcpServer {
                   [@patternfly/react-setup](${join(this.docsPath, 'setup', 'README.md')})
                   [@patternfly/react-troubleshooting](${join(this.docsPath, 'troubleshooting', 'README.md')})
                 `
-              }
+            }
 
               1. Pick the most suitable URL from the above list, and use that as the "urlList" argument for this tool's execution, to get the docs content. If it's just one, let it be an array with one URL.
               2. Analyze the URLs listed in the ${this.useDocsHost ? 'llms.txt' : '.md'} file
               3. Then fetch specific documentation pages relevant to the user's question with the subsequent tool call.`,
-            inputSchema: {
-              type: 'object',
-              properties: {
-                urlList: {
-                  type: 'array',
-                  items: {
-                    type: 'string',
-                  },
-                  description: 'The list of urls to fetch the documentation from',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              urlList: {
+                type: 'array',
+                items: {
+                  type: 'string',
                 },
+                description: 'The list of urls to fetch the documentation from',
               },
-              required: ['urlList'],
-              additionalProperties: false,
-              $schema: 'http://json-schema.org/draft-07/schema#',
             },
+            required: ['urlList'],
+            additionalProperties: false,
+            $schema: 'http://json-schema.org/draft-07/schema#',
           },
-          {
-            name: 'fetchDocs',
-            description: 'Fetch documentation for one or more URLs extracted from previous tool calls responses. The URLs should be passed as an array in the "urls" argument.',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                urls: {
-                  type: 'array',
-                  items: {
-                    type: 'string',
-                  },
-                  description: 'The list of URLs to fetch documentation from',
+        },
+        {
+          name: 'fetchDocs',
+          description: 'Fetch documentation for one or more URLs extracted from previous tool calls responses. The URLs should be passed as an array in the "urls" argument.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              urls: {
+                type: 'array',
+                items: {
+                  type: 'string',
                 },
+                description: 'The list of URLs to fetch documentation from',
               },
-              required: ['urls'],
-              additionalProperties: false,
-              $schema: 'http://json-schema.org/draft-07/schema#',
             },
+            required: ['urls'],
+            additionalProperties: false,
+            $schema: 'http://json-schema.org/draft-07/schema#',
           },
-        ],
-      };
+        },
+      ];
+
+      tools.push({
+        name: 'clearCache',
+        description: 'Clear memo caches by recreating memo instances. Scope: url | file | all.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            scope: { type: 'string', enum: ['url', 'file', 'all'], default: 'all' }
+          },
+          additionalProperties: false,
+          $schema: 'http://json-schema.org/draft-07/schema#'
+        }
+      });
+
+      return { tools };
     });
 
     // Handle tool calls
@@ -256,6 +319,19 @@ class PatternflyMcpServer {
                   text: result,
                 },
               ],
+            };
+          }
+
+          case 'clearCache': {
+            this.assertClearCacheNotRateLimited();
+            const scope = (args?.scope ?? 'all') as 'url' | 'file' | 'all';
+            if (scope === 'url' || scope === 'all') this.resetUrlCache();
+            if (scope === 'file' || scope === 'all') this.resetFileCache();
+            this.markCacheCleared();
+            return {
+              content: [
+                { type: 'text', text: `Cleared cache scope: ${scope}` }
+              ]
             };
           }
 
