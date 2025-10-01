@@ -13,11 +13,11 @@ The Model Context Protocol (MCP) is an open standard that enables AI assistants 
 - **Comprehensive Rule Coverage**: Access setup, guidelines, components, charts, chatbot, and troubleshooting documentation
 - **Smart Search**: Find specific rules and patterns across all documentation
 - **Error Handling**: Robust error handling with proper MCP error codes
-- **Modern Node.js**: Uses ES modules and latest Node.js features
+- **Modern Node.js**: Uses ES modules and the latest Node.js features
 
 ## Prerequisites
 
-- Node.js 18.0.0 or higher
+- Node.js 20.0.0 or higher
 - npm or yarn package manager
 
 ## Installation
@@ -39,13 +39,13 @@ npm run build
 After publishing to npm, you can use this server directly with npx:
 
 ```bash
-npx @jephilli-patternfly-docs/mcp
+npx @cdcabrera/pf-mcp
 ```
 
-Or if installing locally in a project:
+Or, to install locally in a project:
 ```bash
-npm install @jephilli-patternfly-docs/mcp
-npx @jephilli-patternfly-docs/mcp
+npm install @cdcabrera/pf-mcp
+npx @cdcabrera/pf-mcp
 ```
 
 ## Development
@@ -73,17 +73,30 @@ The MCP server communicates over stdio and provides access to PatternFly documen
 ### Available Tools
 
 #### `usePatternFlyDocs`
-Provides a list of URLs to `llms.txt` files that should be chosen to read for a particular context. These `llms.txt` files contain
-a list of URLs to be read by the following `fetchDocs` tool.
+Fetch and return the content of one or more index documents (e.g., `llms.txt` or `README.md`) that enumerate or link to topic-specific docs. Typically you call this first, review the returned text to find specific doc URLs, then call `fetchDocs` next.
 
 **Parameters:**
-- `urlList` (array of strings, required): Specific directory path to list (relative to the `llms-files` directory)
+- `urlList` (array<string>, required): Each entry is either a fully-qualified URL (https://…) or a local file path to an index document. See “Local vs. docs-host mode” below for how local paths are resolved.
 
 #### `fetchDocs`
-Retrieves the full content of a specific PatternFly `llms.txt` files.
+Fetch and return the content of one or more specific documentation pages. Use this after you’ve identified URLs or files from a previous `usePatternFlyDocs` result.
 
 **Parameters:**
-- `urls` (array of strings, required): Path to the documentation file (relative to documentation)
+- `urls` (array<string>, required): Each entry is either a fully-qualified URL or a local file path to a documentation file. See “Local vs. docs-host mode”.
+
+#### `clearCache`
+Clear internal memoization caches used for file and URL fetching.
+
+**Parameters:**
+- `scope` ("url" | "file" | "all", default: "all")
+
+#### Local vs. docs-host mode
+- By default (no flag), local file paths should reference files as they exist in this repo. Example:
+  - `[YOUR_LOCAL_REPO_PATH]/documentation/chatbot/README.md`
+- When running with the `--docs-host` flag, local file paths are resolved relative to the server’s `llms-files` directory. In this mode, pass entries that exist under `llms-files`. Example:
+  - `react-core/6.0.0/llms.txt`
+
+The server’s tool descriptions adapt to this mode: without `--docs-host` they list `.md` files from `documentation/`; with `--docs-host` they reference `llms.txt` files from `llms-files/`.
 
 ### Example Client Integration
 
@@ -95,7 +108,7 @@ Example configuration for MCP clients using npx (see `mcp-config-example.json`):
   "mcpServers": {
     "patternfly-docs": {
       "command": "npx",
-      "args": ["-y", "@jephilli-patternfly-docs/mcp@latest"],
+      "args": ["-y", "@cdcabrera/pf-mcp@latest"],
       "description": "PatternFly React development rules and documentation"
     }
   }
@@ -109,7 +122,7 @@ For local development (without npx):
     "patternfly-docs": {
       "command": "node",
       "args": ["dist/index.js"],
-      "cwd": "/path/to/patternfly-mcp",
+      "cwd": "[YOUR_LOCAL_REPO_PATH]",
       "description": "PatternFly React development rules and documentation"
     }
   }
@@ -118,15 +131,44 @@ For local development (without npx):
 
 ### Example test commands using the inspector-cli:
 
-#### usePatternFlyDocs
+#### usePatternFlyDocs (embedded guidelines, no --docs-host flag)
 ```
-npx @modelcontextprotocol/inspector-cli --config /Users/jeffreyphillips/.cursor/mcp.json --server patternfly-mcp-server --cli --method tools/call --tool-name usePatternFlyDocs --tool-arg urlList='["/Users/jeffreyphillips/repositories/patternfly-mcp/documentation/chatbot/README.md"]'
+npx @modelcontextprotocol/inspector-cli \
+  --config [YOUR_LOCAL_REPO_PATH]/mcp-config-example.json \
+  --server patternfly-docs \
+  --cli \
+  --method tools/call \
+  --tool-name usePatternFlyDocs \
+  --tool-arg urlList='["[YOUR_LOCAL_REPO_PATH]/documentation/chatbot/README.md"]'
 ```
 
-#### fetchDocs
+#### fetchDocs (remote URLs)
 ```
-npx @modelcontextprotocol/inspector-cli --config /Users/jeffreyphillips/.cursor/mcp.json --server patternfly-mcp-server --cli --method tools/call --tool-name fetchDocs --tool-arg urls='["https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/design-guidelines/components/about-modal/about-modal.md", "https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/accessibility/components/about-modal/about-modal.md"]'
+npx @modelcontextprotocol/inspector-cli \
+  --config [YOUR_LOCAL_REPO_PATH]/mcp-config-example.json \
+  --server patternfly-docs \
+  --cli \
+  --method tools/call \
+  --tool-name fetchDocs \
+  --tool-arg urls='["https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/design-guidelines/components/about-modal/about-modal.md", "https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/accessibility/components/about-modal/about-modal.md"]'
 ```
+
+#### clearCache (optional)
+```
+npx @modelcontextprotocol/inspector-cli \
+  --config [YOUR_LOCAL_REPO_PATH]/mcp-config-example.json \
+  --server patternfly-docs \
+  --cli \
+  --method tools/call \
+  --tool-name clearCache \
+  --tool-arg scope='"all"'
+```
+
+#### Notes on inputs and behavior
+- Both `usePatternFlyDocs` and `fetchDocs` accept a mix of fully-qualified URLs and local file paths.
+- Duplicate entries are automatically deduplicated.
+- Each fetched item is returned with a simple header and separated by a `---` divider.
+- Failures are reported inline with a ❌ marker and the error message.
 
 ## Documentation Structure
 TBD
@@ -152,7 +194,7 @@ npm publish
 
 After publishing, users can run your MCP server with:
 ```bash
-npx @jephilli-patternfly-docs/mcp
+npx @cdcabrera/pf-mcp
 ```
 
 ## Contributing
