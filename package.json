@@ -5,7 +5,9 @@
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "patternfly-mcp": "dist/index.js"
+    "patternfly-mcp": "dist/index.js",
+    "pf-mcp": "dist/index.js",
+    "pfmcp": "dist/index.js"
   },
   "files": [
     "dist/**/*",
