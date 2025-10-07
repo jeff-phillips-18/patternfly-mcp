@@ -86,9 +86,6 @@ export const startHttpFixture = (
  * @returns {string} File content.
  * @throws {Error} File cannot be found or read.
  */
-export const loadFixture = (relPath: string): string => {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
-  return fs.readFileSync(path.join(__dirname, '..', '__fixtures__', 'http', relPath), 'utf-8');
-};
+export const loadFixture = (relPath: string): string =>
+  fs.readFileSync(path.join(__dirname, '..', '__fixtures__', 'http', relPath), 'utf-8');
 
