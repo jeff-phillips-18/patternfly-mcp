@@ -1,8 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
 
 type HeadersMap = Record<string, string | number | string[]>;
 
@@ -87,5 +85,5 @@ export const startHttpFixture = (
  * @throws {Error} File cannot be found or read.
  */
 export const loadFixture = (relPath: string): string =>
-  fs.readFileSync(path.join(__dirname, '..', '__fixtures__', 'http', relPath), 'utf-8');
+  fs.readFileSync(path.join(process.cwd(), 'tests', '__fixtures__', 'http', relPath), 'utf-8');
 

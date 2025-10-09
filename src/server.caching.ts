@@ -1,23 +1,4 @@
-import { createHash } from 'crypto';
-
-/**
- * Simple hash from content.
- *
- * @param {unknown} content - Content to hash
- * @returns {string} Hash string
- */
-export const generateHash = (content: unknown): string =>
-  createHash('sha1')
-    .update(JSON.stringify({ value: (typeof content === 'function' && content.toString()) || content }))
-    .digest('hex');
-
-/**
- * Check if "is a Promise", "Promise like".
- *
- * @param {object} obj - Object to check
- * @returns {boolean} True if object is a Promise
- */
-export const isPromise = (obj: unknown): boolean => /^\[object (Promise|Async|AsyncFunction)]/.test(Object.prototype.toString.call(obj));
+import { generateHash, isPromise } from './server.helpers';
 
 /**
  * Simple argument-based memoize with adjustable cache limit, and extendable cache expire.
@@ -36,7 +17,7 @@ export const isPromise = (obj: unknown): boolean => /^\[object (Promise|Async|As
  * @param {number} [options.expire] - Expandable milliseconds until cache expires
  * @returns {Function} Memoized function
  */
-export const memo = <TArgs extends any[], TReturn>(
+const memo = <TArgs extends any[], TReturn>(
   func: (...args: TArgs) => TReturn,
   {
     cacheErrors = true,
@@ -150,3 +131,5 @@ export const memo = <TArgs extends any[], TReturn>(
 
   return ized();
 };
+
+export { memo };

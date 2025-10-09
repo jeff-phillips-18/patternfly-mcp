@@ -1,9 +1,9 @@
 export default {
   extensionsToTreatAsEsm: ['.ts'],
   preset: 'ts-jest',
-  roots: ['tests'],
+  roots: ['tests', 'src'],
   testEnvironment: 'node',
-  testMatch: ['<rootDir>/tests/**/*.test.ts'],
+  testMatch: ['<rootDir>/**/*.test.ts', '<rootDir>/src/**/*.test.ts'],
   setupFilesAfterEnv: ['<rootDir>/jest.setupTests.ts'],
   testTimeout: 30000,
   verbose: true,

@@ -30,6 +30,8 @@ jobs:
       - name: Install Node.js packages
         if: ${{ steps.modules-cache.outputs.cache-hit != 'true' }}
         run: npm install
+      - name: Lint and test
+        run: npm test
       - name: Confirm integration
         if: ${{ success() }}
         run: npm run test:integration

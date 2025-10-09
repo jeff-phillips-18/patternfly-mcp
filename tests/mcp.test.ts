@@ -15,37 +15,33 @@ describe('PatternFly MCP', () => {
   afterEach(async ()=> client.stop());
 
   it('should concatenate headers and separator with two local files', async () => {
-    try {
-      const req = {
-        method: 'tools/call',
-        params: {
-          name: 'usePatternFlyDocs',
-          arguments: {
-            urlList: [
-              'documentation/guidelines/README.md',
-              'documentation/components/README.md',
-            ],
-          },
+    const req = {
+      method: 'tools/call',
+      params: {
+        name: 'usePatternFlyDocs',
+        arguments: {
+          urlList: [
+            'documentation/guidelines/README.md',
+            'documentation/components/README.md',
+          ],
         },
-      };
+      },
+    };
 
-      const resp = await client.send(req);
-      const text = resp?.result?.content?.[0]?.text || '';
+    const resp = await client.send(req);
+    const text = resp?.result?.content?.[0]?.text || '';
 
-      expect(text.startsWith('# Documentation from')).toBe(true);
-      expect(text).toMatchSnapshot();
-    } catch {}
+    expect(text.startsWith('# Documentation from')).toBe(true);
+    expect(text).toMatchSnapshot();
   });
 
   it('should expose expected tools and stable shape', async () => {
-    try {
-      const resp = await client.send({ method: 'tools/list' });
-      const tools = resp?.result?.tools || [];
-      const toolNames = tools.map(tool => tool.name).sort();
+    const resp = await client.send({ method: 'tools/list' });
+    const tools = resp?.result?.tools || [];
+    const toolNames = tools.map(tool => tool.name).sort();
 
-      expect(toolNames).toEqual(expect.arrayContaining(['usePatternFlyDocs', 'fetchDocs', 'clearCache']));
-      expect({ toolNames }).toMatchSnapshot();
-    } catch {}
+    expect(toolNames).toEqual(expect.arrayContaining(['usePatternFlyDocs', 'fetchDocs']));
+    expect({ toolNames }).toMatchSnapshot();
   });
 });
 
@@ -59,21 +55,19 @@ describe('Hosted mode, --docs-host', () => {
   afterEach(async ()=> client.stop());
 
   it('should read llms-files and includes expected tokens', async () => {
-    try {
-      const req = {
-        method: 'tools/call',
-        params: {
-          name: 'usePatternFlyDocs',
-          arguments: { urlList: ['react-core/6.0.0/llms.txt'] },
-        },
-      };
-      const resp = await client.send(req);
-      const text = resp?.result?.content?.[0]?.text || '';
+    const req = {
+      method: 'tools/call',
+      params: {
+        name: 'usePatternFlyDocs',
+        arguments: { urlList: ['react-core/6.0.0/llms.txt'] },
+      },
+    };
+    const resp = await client.send(req);
+    const text = resp?.result?.content?.[0]?.text || '';
 
-      expect(text.startsWith('# Documentation from')).toBe(true);
-      expect(text.includes('react-core')).toBe(true);
-      expect(text.split(/\n/g).filter(Boolean).splice(1)).toMatchSnapshot();
-    } catch {}
+    expect(text.startsWith('# Documentation from')).toBe(true);
+    expect(text.includes('react-core')).toBe(true);
+    expect(text.split(/\n/g).filter(Boolean).splice(1)).toMatchSnapshot();
   });
 });
 
@@ -107,17 +101,15 @@ describe('External URLs', () => {
   });
 
   it('should fetch a document', async () => {
-    try {
-      const req = {
-        method: 'tools/call',
-        params: { name: 'fetchDocs', arguments: { urls: [url] } },
-      };
-      const resp = await client.send(req, { timeoutMs: 10000 });
-      const text = resp?.result?.content?.[0]?.text || '';
+    const req = {
+      method: 'tools/call',
+      params: { name: 'fetchDocs', arguments: { urlList: [url] } },
+    };
+    const resp = await client.send(req, { timeoutMs: 10000 });
+    const text = resp?.result?.content?.[0]?.text || '';
 
-      expect(text.startsWith('# Documentation from')).toBe(true);
-      expect(/patternfly/i.test(text)).toBe(true);
-      expect(text.split(/\n/g).filter(Boolean).splice(1)).toMatchSnapshot();
-    } catch {}
+    expect(text.startsWith('# Documentation from')).toBe(true);
+    expect(/patternfly/i.test(text)).toBe(true);
+    expect(text.split(/\n/g).filter(Boolean).splice(1)).toMatchSnapshot();
   });
 });
