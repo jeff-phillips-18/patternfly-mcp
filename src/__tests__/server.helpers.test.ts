@@ -1,10 +1,6 @@
-import helpers, { generateHash } from '../server.helpers';
+import { generateHash, isPromise } from '../server.helpers';
 
-describe('Helpers', () => {
-  it('should return specific properties', () => {
-    expect(Object.keys(helpers)).toMatchSnapshot('specific properties');
-  });
-
+describe('generateHash', () => {
   it('should minimally generate a consistent hash', () => {
     expect({
       valueObject: generateHash({ lorem: 'ipsum', dolor: ['sit', null, undefined, 1, () => 'hello world'] }),
@@ -28,5 +24,27 @@ describe('Helpers', () => {
       valueBoolTrue: generateHash(true),
       valueBoolFalse: generateHash(false)
     }).toMatchSnapshot('hash, object and primitive values');
+  });
+});
+
+describe('isPromise', () => {
+  it.each([
+    {
+      description: 'Promise.resolve',
+      func: Promise.resolve(),
+      value: true
+    },
+    {
+      description: 'async function',
+      func: async () => {},
+      value: true
+    },
+    {
+      description: 'non-promise',
+      func: () => 'lorem',
+      value: false
+    }
+  ])('should determine a promise for $description', ({ func, value }) => {
+    expect(isPromise(func)).toBe(value);
   });
 });

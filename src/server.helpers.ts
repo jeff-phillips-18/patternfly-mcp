@@ -19,9 +19,4 @@ const generateHash = (content: unknown) =>
  */
 const isPromise = (obj: unknown) => /^\[object (Promise|Async|AsyncFunction)]/.test(Object.prototype.toString.call(obj));
 
-const helpers = {
-  generateHash,
-  isPromise
-};
-
-export { helpers as default, helpers, generateHash, isPromise };
+export { generateHash, isPromise };

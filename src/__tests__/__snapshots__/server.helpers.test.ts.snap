@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
-exports[`Helpers should minimally generate a consistent hash: hash, object and primitive values 1`] = `
+exports[`generateHash should minimally generate a consistent hash: hash, object and primitive values 1`] = `
 {
   "valueArray": "0e8e2b3096e6aee20e3cd10b7788ce3d72502061",
   "valueArrayConfirmSort": true,
@@ -19,11 +19,4 @@ exports[`Helpers should minimally generate a consistent hash: hash, object and p
   "valueSymbolUndefined": true,
   "valueUndefined": "bf21a9e8fbc5a3846fb05b4fa0859e0917b2202f",
 }
-`;
-
-exports[`Helpers should return specific properties: specific properties 1`] = `
-[
-  "generateHash",
-  "isPromise",
-]
 `;
