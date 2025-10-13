@@ -12,8 +12,8 @@ type McpToolCreator = () => McpTool;
  * Create, register tool and errors, then run the server.
  *
  * @param options
- * @param root0
- * @param root0.tools
+ * @param settings
+ * @param settings.tools
  */
 const runServer = async (options = OPTIONS, {
   tools = [

@@ -69,11 +69,11 @@ export const isRpcResponse = (val: RpcResponse | unknown): boolean =>
  * - args: additional args to pass to server (e.g., ['--docs-host'])
  * - env: env vars to pass to child
  *
- * @param root0
- * @param root0.command
- * @param root0.serverPath
- * @param root0.args
- * @param root0.env
+ * @param params
+ * @param params.command
+ * @param params.serverPath
+ * @param params.args
+ * @param params.env
  */
 export const startServer = async ({
   command = 'node',
