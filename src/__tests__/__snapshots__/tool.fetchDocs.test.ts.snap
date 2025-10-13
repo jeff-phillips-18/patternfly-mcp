@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`fetchDocsTool tool structure should match structure snapshot 1`] = `
+{
+  "description": "Fetch documentation for one or more URLs extracted from previous tool calls responses. The URLs should be passed as an array in the "urlList" argument.",
+  "hasInputSchema": true,
+  "name": "fetchDocs",
+}
+`;
