@@ -13,7 +13,6 @@ interface CliOptions {
  * Application defaults (not user-configurable)
  */
 interface AppDefaults {
-  cacheConfig: typeof DEFAULT_CACHE_CONFIG;
   resourceMemoOptions: typeof RESOURCE_MEMO_OPTIONS;
   toolMemoOptions: typeof TOOL_MEMO_OPTIONS;
   pfExternal: string;
@@ -45,15 +44,6 @@ interface GlobalOptions extends CliOptions, AppDefaults {
  * Default separator for joining multiple document contents
  */
 const DEFAULT_SEPARATOR = '\n\n---\n\n';
-
-/**
- * Default cache TTL configuration
- */
-const DEFAULT_CACHE_CONFIG = {
-  CACHE_TTL_MS: 10 * 60 * 1000, // 10 min sliding cache
-  URL_CACHE_TTL_MS: 30 * 60 * 1000, // 30 min sliding cache for external URLs
-  CLEAR_CACHE_COOLDOWN_MS: Number(process.env.DOC_MCP_CLEAR_COOLDOWN_MS || 5000)
-};
 
 /**
  * Resource-level memoization options
@@ -145,7 +135,6 @@ const PF_EXTERNAL_CHARTS_DESIGN = `${PF_EXTERNAL_CHARTS}/charts`;
  * @property {string} pfExternalDesignComponents - PatternFly external design guidelines components URL.
  * @property {string} pfExternalDesignLayouts - PatternFly external design guidelines layouts URL.
  * @property {string} pfExternalAccessibility - PatternFly external accessibility URL.
- * @property {typeof DEFAULT_CACHE_CONFIG} cacheConfig - Default cache configuration.
  * @property {typeof RESOURCE_MEMO_OPTIONS} resourceMemoOptions - Resource-level memoization options.
  * @property {typeof TOOL_MEMO_OPTIONS} toolMemoOptions - Tool-specific memoization options.
  * @property {string} separator - Default string delimiter.
@@ -166,7 +155,6 @@ const OPTIONS: GlobalOptions = {
   pfExternalDesignComponents: PF_EXTERNAL_DESIGN_COMPONENTS,
   pfExternalDesignLayouts: PF_EXTERNAL_DESIGN_LAYOUTS,
   pfExternalAccessibility: PF_EXTERNAL_ACCESSIBILITY,
-  cacheConfig: DEFAULT_CACHE_CONFIG,
   resourceMemoOptions: RESOURCE_MEMO_OPTIONS,
   toolMemoOptions: TOOL_MEMO_OPTIONS,
   separator: DEFAULT_SEPARATOR,
@@ -212,7 +200,6 @@ export {
   PF_EXTERNAL_DESIGN_COMPONENTS,
   PF_EXTERNAL_DESIGN_LAYOUTS,
   PF_EXTERNAL_ACCESSIBILITY,
-  DEFAULT_CACHE_CONFIG,
   RESOURCE_MEMO_OPTIONS,
   TOOL_MEMO_OPTIONS,
   DEFAULT_SEPARATOR,

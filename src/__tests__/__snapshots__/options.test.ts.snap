@@ -2,22 +2,12 @@
 
 exports[`options should have expected values 1`] = `
 {
-  "DEFAULT_CACHE_CONFIG": {
-    "CACHE_TTL_MS": 600000,
-    "CLEAR_CACHE_COOLDOWN_MS": 5000,
-    "URL_CACHE_TTL_MS": 1800000,
-  },
   "DEFAULT_SEPARATOR": "
 
 ---
 
 ",
   "OPTIONS": {
-    "cacheConfig": {
-      "CACHE_TTL_MS": 600000,
-      "CLEAR_CACHE_COOLDOWN_MS": 5000,
-      "URL_CACHE_TTL_MS": 1800000,
-    },
     "contextPath": "/",
     "docsPath": "/documentation",
     "llmsFilesPath": "/llms-files",
