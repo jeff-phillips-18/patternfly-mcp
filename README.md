@@ -4,92 +4,122 @@ A Model Context Protocol (MCP) server that provides access to PatternFly React d
 
 ## What is MCP?
 
-The Model Context Protocol (MCP) is an open standard that enables AI assistants to securely access external data sources and tools. This server provides a standardized way to expose PatternFly documentation and development rules to MCP-compatible clients.
+The Model Context Protocol (MCP) is an open standard that enables AI assistants to securely access external data sources and tools. This server exposes PatternFly documentation and development rules through a standard MCP stdio transport, so any MCP‑compatible client can call its tools.
 
 ## Features
 
-- **TypeScript**: Full type safety and modern JavaScript features
-- **PatternFly Documentation Access**: Browse, search, and retrieve PatternFly development rules
-- **Comprehensive Rule Coverage**: Access setup, guidelines, components, charts, chatbot, and troubleshooting documentation
-- **Smart Search**: Find specific rules and patterns across all documentation
-- **Error Handling**: Robust error handling with proper MCP error codes
-- **Modern Node.js**: Uses ES modules and latest Node.js features
+- TypeScript implementation with ES modules
+- PatternFly documentation access (design guidelines, accessibility, charts, and local docs)
+- Two tools for fetching index content and specific pages
+- Simple memoization for fast repeat fetches
+- Robust error handling with MCP error codes
+- Works over stdio; easy to run from MCP clients
 
 ## Prerequisites
 
 - Node.js 18.0.0 or higher
-- npm or yarn package manager
+- npm (or another Node package manager)
 
 ## Installation
 
-### For Development
+### Local development
 
-1. Install dependencies:
+1) Install dependencies:
+
 ```bash
 npm install
 ```
 
-2. Build the project:
+2) Build the project:
+
 ```bash
 npm run build
 ```
 
-### For Use with npx
+3) Run in watch/dev mode (TypeScript via tsx):
 
-After publishing to npm, you can use this server directly with npx:
+```bash
+npm run start:dev
+```
+
+### Use via npx (after publishing)
 
 ```bash
 npx @jephilli-patternfly-docs/mcp
 ```
 
-Or if installing locally in a project:
+Or install locally in a project and run:
+
 ```bash
 npm install @jephilli-patternfly-docs/mcp
 npx @jephilli-patternfly-docs/mcp
 ```
 
-## Development
+## Scripts
 
-### Scripts
+These are the most relevant NPM scripts from package.json:
 
-- `npm run dev` - Run the server in development mode with hot reload
-- `npm run build` - Build the TypeScript code to JavaScript
-- `npm run start` - Start the built server
-- `npm run watch` - Watch for changes and rebuild automatically
-- `npm run clean` - Clean the build directory
-
-### Running in Development
-
-```bash
-npm run dev
-```
-
-This will start the server using `tsx` for TypeScript execution without compilation.
+- `build`: Build the TypeScript project (cleans dist, type-checks, bundles)
+- `build:clean`: Remove dist
+- `build:watch`: Build in watch mode
+- `start`: Run the built server (node dist/index.js)
+- `start:dev`: Run with tsx in watch mode (development)
+- `test`: Type-check and run unit tests in src/
+- `test:dev`: Jest watch mode for unit tests
+- `test:integration`: Build and run integration tests in tests/
+- `test:integration-dev`: Watch mode for integration tests
+- `test:types`: TypeScript type-check only (no emit)
 
 ## Usage
 
-The MCP server communicates over stdio and provides access to PatternFly documentation through the following tools:
+The MCP server communicates over stdio and provides access to PatternFly documentation through the following tools. Both tools accept an argument named urlList which must be an array of strings. Each string is either:
+- An external URL (e.g., a raw GitHub URL to a .md file), or
+- A local file path (e.g., documentation/.../README.md). When running with the --docs-host flag, these paths are resolved under the llms-files directory instead.
 
-### Available Tools
+Returned content format:
+- For each entry in urlList, the server loads its content, prefixes it with a header like: `# Documentation from <resolved-path-or-url>` and joins multiple entries using a separator: `\n\n---\n\n`.
+- If an entry fails to load, an inline error message is included for that entry.
 
-#### `usePatternFlyDocs`
-Provides a list of URLs to `llms.txt` files that should be chosen to read for a particular context. These `llms.txt` files contain
-a list of URLs to be read by the following `fetchDocs` tool.
+### Tool: usePatternFlyDocs
 
-**Parameters:**
-- `urlList` (array of strings, required): Specific directory path to list (relative to the `llms-files` directory)
+Use this to fetch high-level index content (for example, a local README.md that contains relevant links, or llms.txt files in docs-host mode). From that content, you can select specific URLs to pass to fetchDocs.
 
-#### `fetchDocs`
-Retrieves the full content of a specific PatternFly `llms.txt` files.
+Parameters:
+- `urlList`: string[] (required)
 
-**Parameters:**
-- `urls` (array of strings, required): Path to the documentation file (relative to documentation)
+Response (tools/call):
+- content[0].type = "text"
+- content[0].text = concatenated documentation content (one or more sources)
 
-### Example Client Integration
+### Tool: fetchDocs
 
-To use this server with an MCP client, you typically need to configure the client to run this server as a subprocess. The exact configuration depends on your MCP client.
+Use this to fetch one or more specific documentation pages (e.g., concrete design guidelines or accessibility pages) after you’ve identified them via usePatternFlyDocs.
 
-Example configuration for MCP clients using npx (see `mcp-config-example.json`):
+Parameters:
+- `urlList`: string[] (required)
+
+Response (tools/call):
+- content[0].type = "text"
+- content[0].text = concatenated documentation content (one or more sources)
+
+## Docs-host mode (local llms.txt mode)
+
+If you run the server with --docs-host, local paths you pass in urlList are resolved relative to the llms-files folder at the repository root. This is useful when you have pre-curated llms.txt files locally.
+
+Example:
+
+```bash
+npx @jephilli-patternfly-docs/mcp --docs-host
+```
+
+Then, passing a local path such as react-core/6.0.0/llms.txt in urlList will load from llms-files/react-core/6.0.0/llms.txt.
+
+## MCP client configuration examples
+
+Most MCP clients use a JSON configuration that tells the client how to start this server. The server itself does not read that JSON; it only reads CLI flags and environment variables. Below are examples you can adapt to your MPC client.
+
+### Minimal client config (npx)
+
 ```json
 {
   "mcpServers": {
@@ -102,7 +132,22 @@ Example configuration for MCP clients using npx (see `mcp-config-example.json`):
 }
 ```
 
-For local development (without npx):
+### Docs-host mode
+
+```json
+{
+  "mcpServers": {
+    "patternfly-docs": {
+      "command": "npx",
+      "args": ["-y", "@jephilli-patternfly-docs/mcp@latest", "--docs-host"],
+      "description": "PatternFly docs (docs-host mode)"
+    }
+  }
+}
+```
+
+### Local development (after build)
+
 ```json
 {
   "mcpServers": {
@@ -110,26 +155,69 @@ For local development (without npx):
       "command": "node",
       "args": ["dist/index.js"],
       "cwd": "/path/to/patternfly-mcp",
-      "description": "PatternFly React development rules and documentation"
+      "description": "PatternFly docs (local build)"
     }
   }
 }
 ```
 
-### Example test commands using the inspector-cli:
+## Inspector-CLI examples (tools/call)
 
-#### usePatternFlyDocs
-```
-npx @modelcontextprotocol/inspector-cli --config ~/.cursor/mcp.json --server patternfly-mcp-server --cli --method tools/call --tool-name usePatternFlyDocs --tool-arg urlList='["<path to patternfly-mcp>/documentation/chatbot/README.md"]'
+Note: The parameter name is urlList and it must be a JSON array of strings.
+
+usePatternFlyDocs (example with a local README):
+
+```bash
+npx @modelcontextprotocol/inspector-cli \
+  --config ./mcp-config.json \
+  --server patternfly-docs \
+  --cli \
+  --method tools/call \
+  --tool-name usePatternFlyDocs \
+  --tool-arg urlList='["documentation/guidelines/README.md"]'
 ```
 
-#### fetchDocs
-```
-npx @modelcontextprotocol/inspector-cli --config ~/.cursor/mcp.json --server patternfly-mcp-server --cli --method tools/call --tool-name fetchDocs --tool-arg urls='["https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/design-guidelines/components/about-modal/about-modal.md", "https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/accessibility/components/about-modal/about-modal.md"]'
+fetchDocs (example with external URLs):
+
+```bash
+npx @modelcontextprotocol/inspector-cli \
+  --config ./mcp-config.json \
+  --server patternfly-docs \
+  --cli \
+  --method tools/call \
+  --tool-name fetchDocs \
+  --tool-arg urlList='[
+    "https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/design-guidelines/components/about-modal/about-modal.md",
+    "https://raw.githubusercontent.com/patternfly/patternfly-org/refs/heads/main/packages/documentation-site/patternfly-docs/content/accessibility/components/about-modal/about-modal.md"
+  ]'
 ```
 
-## Documentation Structure
-TBD
+## Environment variables
+
+- DOC_MCP_FETCH_TIMEOUT_MS: Milliseconds to wait before aborting an HTTP fetch (default: 15000)
+- DOC_MCP_CLEAR_COOLDOWN_MS: Default cooldown value used in internal cache configuration. The current public API does not expose a clearCache tool.
+
+## Programmatic usage (advanced)
+
+The server factory is exported. While there’s no explicit exports map, advanced users can import the built server module directly.
+
+Example (ESM):
+
+```js
+// Not officially supported API surface; paths may change in future versions
+import { runServer } from '@jephilli-patternfly-docs/mcp/dist/server.js';
+
+await runServer();
+```
+
+## Returned content details
+
+For each provided path or URL, the server returns a section:
+- Header: `# Documentation from <resolved-path-or-url>`
+- Body: the raw file content fetched from disk or network
+- Sections are concatenated with `\n\n---\n\n`
+
+This makes it easier to see where each chunk of content came from when multiple inputs are provided.
 
 ## Publishing
 
