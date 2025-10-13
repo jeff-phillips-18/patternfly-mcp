@@ -5,10 +5,10 @@ import { memo } from './server.caching';
 
 /**
  * Read a local file and return its contents as a string
+ *
+ * @param filePath
  */
-const readLocalFileFunction = async (filePath: string) => {
-  return await readFile(filePath, 'utf-8');
-};
+const readLocalFileFunction = async (filePath: string) => await readFile(filePath, 'utf-8');
 
 /**
  * Memoized version of readLocalFileFunction
@@ -17,6 +17,8 @@ readLocalFileFunction.memo = memo(readLocalFileFunction, OPTIONS.resourceMemoOpt
 
 /**
  * Fetch content from a URL with timeout and error handling
+ *
+ * @param url
  */
 const fetchUrlFunction = async (url: string) => {
   const controller = new AbortController();
@@ -26,7 +28,7 @@ const fetchUrlFunction = async (url: string) => {
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { 'Accept': 'text/plain, text/markdown, */*' }
+      headers: { Accept: 'text/plain, text/markdown, */*' }
     });
 
     if (!response.ok) {
@@ -46,12 +48,18 @@ fetchUrlFunction.memo = memo(fetchUrlFunction, OPTIONS.resourceMemoOptions.fetch
 
 /**
  * Resolve a local path depending on docs host flag
+ *
+ * @param relativeOrAbsolute
+ * @param options
  */
 const resolveLocalPathFunction = (relativeOrAbsolute: string, options = OPTIONS) =>
   (options.docsHost && join(options.llmsFilesPath, relativeOrAbsolute)) || relativeOrAbsolute;
 
 /**
  * Normalize inputs, load all in parallel, and return a joined string.
+ *
+ * @param inputs
+ * @param options
  */
 const processDocsFunction = async (
   inputs: string[],
@@ -66,6 +74,7 @@ const processDocsFunction = async (
         return false;
       }
       seen.add(str);
+
       return true;
     });
 
@@ -91,6 +100,7 @@ const processDocsFunction = async (
 
     if (res.status === 'fulfilled') {
       const { header, content } = res.value;
+
       parts.push(`${header}\n\n${content}`);
     } else {
       parts.push(`❌ Failed to load ${original}: ${res.reason}`);

@@ -5,13 +5,14 @@ import { processDocsFunction } from './server.getResources';
 import { OPTIONS } from './options';
 import { memo } from './server.caching';
 
-
 /**
  * fetchDocs tool function (tuple pattern)
+ *
+ * @param options
  */
 const fetchDocsTool = (options = OPTIONS): McpTool => {
   const memoProcess = memo(processDocsFunction, options.toolMemoOptions.fetchDocs);
-  
+
   const callback = async (args: any = {}) => {
     const { urlList } = args;
 
@@ -37,9 +38,9 @@ const fetchDocsTool = (options = OPTIONS): McpTool => {
       content: [
         {
           type: 'text',
-          text: result,
-        },
-      ],
+          text: result
+        }
+      ]
     };
   };
 
@@ -48,8 +49,8 @@ const fetchDocsTool = (options = OPTIONS): McpTool => {
     {
       description: 'Fetch documentation for one or more URLs extracted from previous tool calls responses. The URLs should be passed as an array in the "urlList" argument.',
       inputSchema: {
-        urlList: z.array(z.string()).describe('The list of URLs to fetch documentation from'),
-      },
+        urlList: z.array(z.string()).describe('The list of URLs to fetch documentation from')
+      }
     },
     callback
   ];

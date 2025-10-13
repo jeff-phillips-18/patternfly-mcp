@@ -59,4 +59,5 @@ coverage/
 .yarn-integrity
 
 # agent
+.archive
 .agent

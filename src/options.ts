@@ -27,7 +27,7 @@ interface AppDefaults {
   urlRegex: RegExp;
   name: string;
   version: string;
-  repoName: string|undefined;
+  repoName: string | undefined;
   contextPath: string;
   docsPath: string;
   llmsFilesPath: string;
@@ -164,21 +164,21 @@ const OPTIONS: GlobalOptions = {
   repoName: process.cwd()?.split?.('/')?.pop?.()?.trim?.(),
   contextPath: (process.env.NODE_ENV === 'local' && '/') || process.cwd(),
   docsPath: (process.env.NODE_ENV === 'local' && '/documentation') || join(process.cwd(), 'documentation'),
-  llmsFilesPath: (process.env.NODE_ENV === 'local' && '/llms-files') || join(process.cwd(), 'llms-files'),
+  llmsFilesPath: (process.env.NODE_ENV === 'local' && '/llms-files') || join(process.cwd(), 'llms-files')
 };
 
 /**
  * Parse CLI arguments and return CLI options
  */
-const parseCliOptions = (): CliOptions => {
-  return {
-    docsHost: process.argv.includes('--docs-host'),
-    // Future CLI options can be added here
-  };
-};
+const parseCliOptions = (): CliOptions => ({
+  docsHost: process.argv.includes('--docs-host')
+  // Future CLI options can be added here
+});
 
 /**
  * Make global options immutable after combining CLI options with app defaults.
+ *
+ * @param cliOptions
  */
 const freezeOptions = (cliOptions: CliOptions) => {
   Object.assign(OPTIONS, {

@@ -16,7 +16,6 @@ const main = async (): Promise<void> => {
 
     // Create and run the server
     await runServer();
-
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
@@ -25,7 +24,7 @@ const main = async (): Promise<void> => {
 
 // Start the server
 if (process.env.NODE_ENV !== 'local') {
-  main().catch((error) => {
+  main().catch(error => {
     console.error('Failed to start server:', error);
     process.exit(1);
   });

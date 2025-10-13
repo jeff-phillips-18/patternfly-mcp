@@ -3,16 +3,16 @@
  */
 
 import { startServer, type StdioClient } from './utils/stdioClient';
-import { loadFixture, startHttpFixture } from "./utils/httpFixtureServer";
+import { loadFixture, startHttpFixture } from './utils/httpFixtureServer';
 
 describe('PatternFly MCP', () => {
   let client: StdioClient;
 
-  beforeEach(async ()=> {
-    client = await startServer()
+  beforeEach(async () => {
+    client = await startServer();
   });
 
-  afterEach(async ()=> client.stop());
+  afterEach(async () => client.stop());
 
   it('should concatenate headers and separator with two local files', async () => {
     const req = {
@@ -22,10 +22,10 @@ describe('PatternFly MCP', () => {
         arguments: {
           urlList: [
             'documentation/guidelines/README.md',
-            'documentation/components/README.md',
-          ],
-        },
-      },
+            'documentation/components/README.md'
+          ]
+        }
+      }
     };
 
     const resp = await client.send(req);
@@ -48,19 +48,19 @@ describe('PatternFly MCP', () => {
 describe('Hosted mode, --docs-host', () => {
   let client: StdioClient;
 
-  beforeEach(async ()=> {
-    client = await startServer({ args: ['--docs-host'] })
+  beforeEach(async () => {
+    client = await startServer({ args: ['--docs-host'] });
   });
 
-  afterEach(async ()=> client.stop());
+  afterEach(async () => client.stop());
 
   it('should read llms-files and includes expected tokens', async () => {
     const req = {
       method: 'tools/call',
       params: {
         name: 'usePatternFlyDocs',
-        arguments: { urlList: ['react-core/6.0.0/llms.txt'] },
-      },
+        arguments: { urlList: ['react-core/6.0.0/llms.txt'] }
+      }
     };
     const resp = await client.send(req);
     const text = resp?.result?.content?.[0]?.text || '';
@@ -76,22 +76,23 @@ describe('External URLs', () => {
   let url: string;
   let client: StdioClient;
 
-  beforeEach(async ()=> {
-    client = await startServer()
+  beforeEach(async () => {
+    client = await startServer();
   });
 
-  afterEach(async ()=> client.stop());
+  afterEach(async () => client.stop());
 
   beforeAll(async () => {
     const body = loadFixture('README.md');
+
     fixture = await startHttpFixture({
       routes: {
         '/readme': {
           status: 200,
           headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
-          body,
-        },
-      },
+          body
+        }
+      }
     });
     url = `${fixture.baseUrl}/readme`;
   });
@@ -103,7 +104,7 @@ describe('External URLs', () => {
   it('should fetch a document', async () => {
     const req = {
       method: 'tools/call',
-      params: { name: 'fetchDocs', arguments: { urlList: [url] } },
+      params: { name: 'fetchDocs', arguments: { urlList: [url] } }
     };
     const resp = await client.send(req, { timeoutMs: 10000 });
     const text = resp?.result?.content?.[0]?.text || '';

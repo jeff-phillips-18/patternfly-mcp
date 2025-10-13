@@ -30,7 +30,7 @@ const memo = <TArgs extends any[], TReturn>(
     debug?: (info: { type: string; value: unknown; cache: unknown[] }) => void;
     expire?: number;
   } = {}
-): ((...args: TArgs) => TReturn) => {
+): (...args: TArgs) => TReturn => {
   const isCacheErrors = Boolean(cacheErrors);
   const isFuncPromise = isPromise(func);
   const updatedExpire = Number.parseInt(String(expire), 10) || undefined;

@@ -64,10 +64,12 @@ These are the most relevant NPM scripts from package.json:
 - `build:watch`: Build in watch mode
 - `start`: Run the built server (node dist/index.js)
 - `start:dev`: Run with tsx in watch mode (development)
-- `test`: Type-check and run unit tests in src/
+- `test`: Run linting, type-check, and unit tests in src/
 - `test:dev`: Jest watch mode for unit tests
 - `test:integration`: Build and run integration tests in tests/
 - `test:integration-dev`: Watch mode for integration tests
+- `test:lint`: Run ESLint (code quality checks)
+- `test:lint-fix`: Run ESLint with auto-fix
 - `test:types`: TypeScript type-check only (no emit)
 
 ## Usage

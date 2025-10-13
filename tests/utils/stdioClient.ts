@@ -57,8 +57,8 @@ export interface StdioClient {
  * @param {RpcResponse|unknown} val
  * @returns {boolean} Is value an RpcResponse.
  */
-export const isRpcResponse = (val: RpcResponse|unknown): boolean =>
-  (typeof val === 'object' && val !== null && ('jsonrpc' in val) && ('id' in val));
+export const isRpcResponse = (val: RpcResponse | unknown): boolean =>
+  typeof val === 'object' && val !== null && ('jsonrpc' in val) && ('id' in val);
 
 /**
  * Start the MCP server process and return a client with send/stop APIs.
@@ -68,6 +68,12 @@ export const isRpcResponse = (val: RpcResponse|unknown): boolean =>
  * - serverPath: path to built server (default: process.env.SERVER_PATH || 'dist/index.js')
  * - args: additional args to pass to server (e.g., ['--docs-host'])
  * - env: env vars to pass to child
+ *
+ * @param root0
+ * @param root0.command
+ * @param root0.serverPath
+ * @param root0.args
+ * @param root0.env
  */
 export const startServer = async ({
   command = 'node',
@@ -77,7 +83,7 @@ export const startServer = async ({
 }: StartOptions = {}): Promise<StdioClient> => {
   const proc: ChildProcessWithoutNullStreams = spawn(command, [serverPath, ...args], {
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...env }
   });
 
   const pending = new Map<number | string, PendingEntry>(); // id -> { resolve, reject, timer }
@@ -99,6 +105,7 @@ export const startServer = async ({
 
     while ((idx = buffer.indexOf('\n')) >= 0) {
       const line = buffer.slice(0, idx).trim();
+
       buffer = buffer.slice(idx + 1);
 
       if (!line) {
@@ -106,6 +113,7 @@ export const startServer = async ({
       }
 
       let parsed: RpcResponse = {} as RpcResponse;
+
       try {
         parsed = JSON.parse(line);
       } catch {}
@@ -116,6 +124,7 @@ export const startServer = async ({
 
       if (pending.has(parsed.id)) {
         const entry = pending.get(parsed.id)!;
+
         clearTimeout(entry.timer);
         pending.delete(parsed.id);
         entry.resolve(parsed);
@@ -127,7 +136,7 @@ export const startServer = async ({
     stderr += data.toString();
   });
 
-  const stop = (signal: NodeJS.Signals = 'SIGINT'): Promise<void> => new Promise((resolve) => {
+  const stop = (signal: NodeJS.Signals = 'SIGINT'): Promise<void> => new Promise(resolve => {
     if (isClosed) {
       return resolve();
     }
@@ -168,6 +177,7 @@ export const startServer = async ({
       pending.delete(id);
 
       const error = err instanceof Error ? err : new Error(String(err));
+
       reject(error);
     }
   });

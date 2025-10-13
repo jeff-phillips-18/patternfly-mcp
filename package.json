@@ -21,10 +21,12 @@
     "build:watch": "npm run build -- --watch",
     "start": "node dist/index.js",
     "start:dev": "tsx watch src/index.ts",
-    "test": "export NODE_ENV=local; npm run test:types; jest --roots=src/",
+    "test": "export NODE_ENV=local; npm run test:lint && npm run test:types && jest --roots=src/",
     "test:dev": "npm test -- --watchAll",
     "test:integration": "npm run build && jest --roots=tests/",
     "test:integration-dev": "npm run test:integration -- --watchAll",
+    "test:lint": "eslint .",
+    "test:lint-fix": "eslint . --fix",
     "test:types": "tsc --noEmit",
     "prepare": "npm run build",
     "prepack": "npm run build"
@@ -45,14 +47,19 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@cdcabrera/eslint-config-toolkit": "^0.2.0",
     "@types/jest": "^30.0.0",
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.1",
+    "@typescript-eslint/parser": "^8.46.1",
+    "eslint": "^9.37.0",
     "jest": "^30.2.0",
     "pkgroll": "^2.18.0",
     "ts-jest": "29.4.4",
     "ts-node": "^10.1.0",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1"
   },
   "engines": {
     "node": ">=18.0.0"

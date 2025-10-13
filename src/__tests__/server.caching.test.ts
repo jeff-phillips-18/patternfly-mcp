@@ -65,6 +65,7 @@ describe('memo', () => {
         successValue = value();
       } catch (e) {
         const error = e as Error;
+
         errorValue = error.message;
       }
 
@@ -130,6 +131,7 @@ describe('memo', () => {
         successValue = await value();
       } catch (e) {
         const error = e as Error;
+
         errorValue = error.message;
       }
 

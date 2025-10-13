@@ -15,7 +15,7 @@ const CHART_DOCS = [
   `[@patternfly/Charts - Stack Chart](${PF_EXTERNAL_CHARTS_DESIGN}/stacked-chart/stacked-chart.md)`,
   `[@patternfly/Charts - Threshold Chart](${PF_EXTERNAL_CHARTS_DESIGN}/threshold-chart/threshold-chart.md)`,
   `[@patternfly/Charts - Legend](${PF_EXTERNAL_CHARTS_DESIGN}/legend-chart/legend-chart.md)`,
-  `[@patternfly/Charts - Tooltip](${PF_EXTERNAL_CHARTS_DESIGN}/tooltip-chart/tooltip-chart.md)`,
+  `[@patternfly/Charts - Tooltip](${PF_EXTERNAL_CHARTS_DESIGN}/tooltip-chart/tooltip-chart.md)`
 ];
 
 export { CHART_DOCS };

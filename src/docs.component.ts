@@ -171,7 +171,7 @@ const COMPONENT_DOCS = [
   `[@patternfly/Truncate - Design Guidelines](${PF_EXTERNAL_DESIGN_COMPONENTS}/truncate/truncate.md)`,
   `[@patternfly/Truncate - Accessibility](${PF_EXTERNAL_ACCESSIBILITY}/truncate/truncate.md)`,
   `[@patternfly/Wizard - Design Guidelines](${PF_EXTERNAL_DESIGN_COMPONENTS}/wizard/wizard.md)`,
-  `[@patternfly/Wizard - Accessibility](${PF_EXTERNAL_ACCESSIBILITY}/wizard/wizard.md)`,
+  `[@patternfly/Wizard - Accessibility](${PF_EXTERNAL_ACCESSIBILITY}/wizard/wizard.md)`
 ];
 
 export { COMPONENT_DOCS };

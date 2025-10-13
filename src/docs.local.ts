@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join } from 'node:path';
 import { OPTIONS } from './options';
 
 const LOCAL_DOCS = [

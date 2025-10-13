@@ -43,10 +43,12 @@ export const startHttpFixture = (
       if (!route) {
         res.statusCode = 404;
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+
         return res.end('Not Found');
       }
 
       const { status = 200, headers = {}, body } = route;
+
       res.statusCode = status;
 
       Object.entries(headers).forEach(([key, value]) => {

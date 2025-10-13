@@ -7,7 +7,7 @@ const LAYOUT_DOCS = [
   `[@patternfly/Grid - Design Guidelines](${PF_EXTERNAL_DESIGN_LAYOUTS}/grid.md)`,
   `[@patternfly/Level - Design Guidelines](${PF_EXTERNAL_DESIGN_LAYOUTS}/level.md)`,
   `[@patternfly/Split - Design Guidelines](${PF_EXTERNAL_DESIGN_LAYOUTS}/split.md)`,
-  `[@patternfly/Stack - Design Guidelines](${PF_EXTERNAL_DESIGN_LAYOUTS}/stack.md)`,
+  `[@patternfly/Stack - Design Guidelines](${PF_EXTERNAL_DESIGN_LAYOUTS}/stack.md)`
 ];
 
 export { LAYOUT_DOCS };
