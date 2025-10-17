@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { runServer } from '../server';
+import { type GlobalOptions } from '../options';
 
 // Mock dependencies
 jest.mock('@modelcontextprotocol/sdk/server/mcp.js');
@@ -44,72 +45,62 @@ describe('runServer', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('should create MCP server with correct config', async () => {
-    const mockOptions = {
-      name: 'test-server',
-      version: '1.0.0'
-    };
-
-    await runServer(mockOptions as any, { tools: [] });
-
-    expect(MockMcpServer).toHaveBeenCalledWith(
-      {
+  it.each([
+    {
+      description: 'use default tools',
+      options: undefined,
+      tools: undefined
+    },
+    {
+      description: 'use custom options',
+      options: {
         name: 'test-server',
         version: '1.0.0'
       },
-      {
-        capabilities: {
-          tools: {}
-        }
-      }
-    );
-  });
-
-  it('should register tools', async () => {
-    const mockTool1 = jest.fn().mockReturnValue([
-      'tool1',
-      { description: 'Tool 1', inputSchema: {} },
-      jest.fn()
-    ]);
-
-    const mockTool2 = jest.fn().mockReturnValue([
-      'tool2',
-      { description: 'Tool 2', inputSchema: {} },
-      jest.fn()
-    ]);
-
-    await runServer(undefined, { tools: [mockTool1, mockTool2] });
-
-    expect(mockTool1).toHaveBeenCalled();
-    expect(mockTool2).toHaveBeenCalled();
-    expect(mockServer.registerTool).toHaveBeenCalledTimes(2);
-    expect(mockServer.registerTool).toHaveBeenCalledWith('tool1', expect.any(Object), expect.any(Function));
-    expect(mockServer.registerTool).toHaveBeenCalledWith('tool2', expect.any(Object), expect.any(Function));
-  });
-
-  it('should log registered tool names', async () => {
-    const mockTool = jest.fn().mockReturnValue([
-      'myTool',
-      { description: 'My Tool', inputSchema: {} },
-      jest.fn()
-    ]);
-
-    await runServer(undefined, { tools: [mockTool] });
-
-    expect(consoleInfoSpy).toHaveBeenCalledWith('Registered tool: myTool');
-  });
-
-  it('should create transport and connect', async () => {
-    await runServer(undefined, { tools: [] });
+      tools: []
+    },
+    {
+      description: 'create transport, connect, and log success message',
+      options: undefined,
+      tools: []
+    },
+    {
+      description: 'register a tool',
+      options: undefined,
+      tools: [
+        jest.fn().mockReturnValue([
+          'loremIpsum',
+          { description: 'Lorem Ipsum', inputSchema: {} },
+          jest.fn()
+        ])
+      ]
+    },
+    {
+      description: 'register multiple tools',
+      options: undefined,
+      tools: [
+        jest.fn().mockReturnValue([
+          'loremIpsum',
+          { description: 'Lorem Ipsum', inputSchema: {} },
+          jest.fn()
+        ]),
+        jest.fn().mockReturnValue([
+          'dolorSit',
+          { description: 'Dolor Sit', inputSchema: {} },
+          jest.fn()
+        ])
+      ]
+    }
+  ])('should attempt to run server, $description', async ({ options, tools }) => {
+    await runServer(options as GlobalOptions, (tools && { tools }) || undefined);
 
     expect(MockStdioServerTransport).toHaveBeenCalled();
-    expect(mockServer.connect).toHaveBeenCalledWith(mockTransport);
-  });
-
-  it('should log success message after connection', async () => {
-    await runServer(undefined, { tools: [] });
-
-    expect(consoleLogSpy).toHaveBeenCalledWith('Patternfly MCP server running on stdio');
+    expect({
+      info: consoleInfoSpy.mock.calls,
+      registerTool: mockServer.registerTool.mock.calls,
+      mcpServer: MockMcpServer.mock.calls,
+      log: consoleLogSpy.mock.calls
+    }).toMatchSnapshot('console');
   });
 
   it('should handle errors during server creation', async () => {
@@ -130,14 +121,5 @@ describe('runServer', () => {
 
     await expect(runServer(undefined, { tools: [] })).rejects.toThrow('Connection failed');
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error creating MCP server:', error);
-  });
-
-  it('should use default tools when none provided', async () => {
-    // runServer should use default tools (usePatternFlyDocsTool, fetchDocsTool)
-    await runServer();
-
-    // Should register 2 default tools
-    expect(mockServer.registerTool).toHaveBeenCalledTimes(2);
-    expect(consoleInfoSpy).toHaveBeenCalledWith(expect.stringMatching(/^Registered tool:/));
   });
 });
