@@ -15,103 +15,86 @@ describe('usePatternFlyDocsTool', () => {
     jest.clearAllMocks();
   });
 
-  describe('tool structure', () => {
-    it('should return tuple with 3 elements', () => {
-      const tool = usePatternFlyDocsTool();
+  it('should have a consistent return structure', () => {
+    const tool = usePatternFlyDocsTool();
 
-      expect(tool).toHaveLength(3);
-    });
+    expect(tool).toMatchSnapshot('structure');
+  });
+});
 
-    it('should have correct name', () => {
-      const tool = usePatternFlyDocsTool();
-
-      expect(tool[0]).toBe('usePatternFlyDocs');
-    });
-
-    it('should match structure snapshot', () => {
-      const tool = usePatternFlyDocsTool();
-      const [name, schema] = tool;
-
-      expect({
-        name,
-        hasDescription: Boolean(schema.description),
-        hasInputSchema: Boolean(schema.inputSchema)
-      }).toMatchSnapshot();
-    });
+describe('usePatternFlyDocsTool, callback', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  describe('callback', () => {
-    it('should process urlList successfully', async () => {
-      mockProcessDocs.mockResolvedValue('# PatternFly Button\n\nButton component docs');
+  it.each([
+    {
+      description: 'default',
+      value: 'components/button.md',
+      urlList: ['components/button.md']
+    },
+    {
+      description: 'multiple files',
+      value: 'combined docs content',
+      urlList: ['components/button.md', 'components/card.md', 'components/table.md']
+    },
+    {
+      description: 'with empty files',
+      value: 'trimmed content',
+      urlList: ['components/button.md', '', '   ', 'components/card.md', 'components/table.md']
+    }
+  ])('should parse parameters, $description', async ({ value, urlList }) => {
+    mockProcessDocs.mockResolvedValue(value);
+    const [_name, _schema, callback] = usePatternFlyDocsTool();
+    const result = await callback({ urlList });
 
-      const tool = usePatternFlyDocsTool();
-      const callback = tool[2];
-      const result = await callback({ urlList: ['components/button.md'] });
+    expect(mockProcessDocs).toHaveBeenCalledWith(urlList);
+    expect(result).toMatchSnapshot();
+  });
 
-      expect(mockProcessDocs).toHaveBeenCalledWith(['components/button.md']);
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: '# PatternFly Button\n\nButton component docs'
-          }
-        ]
-      });
-    });
+  it('should handle processing errors', async () => {
+    mockProcessDocs.mockRejectedValue(new Error('File not found'));
+    const [_name, _schema, callback] = usePatternFlyDocsTool();
 
-    it('should throw error when urlList is missing', async () => {
-      const tool = usePatternFlyDocsTool();
-      const callback = tool[2];
+    await expect(callback({ urlList: ['missing.md'] })).rejects.toThrow(McpError);
+    await expect(callback({ urlList: ['missing.md'] })).rejects.toThrow('Failed to fetch documentation');
+  });
 
-      await expect(callback({})).rejects.toThrow(McpError);
-      await expect(callback({})).rejects.toThrow('Missing required parameter: urlList');
-    });
+  it.each([
+    {
+      description: 'with missing or undefined urlList',
+      error: 'Missing required parameter: urlList',
+      urlList: undefined
+    },
+    {
+      description: 'with null urlList',
+      error: 'Missing required parameter: urlList',
+      urlList: null
+    },
+    {
+      description: 'with empty urlList',
+      error: 'Failed to fetch documentation',
+      urlList: []
+    },
+    {
+      description: 'with empty strings in a urlList',
+      error: 'Failed to fetch documentation',
+      urlList: ['', ' ']
+    },
+    {
+      description: 'with invalid urlList',
+      error: 'Failed to fetch documentation',
+      urlList: ['invalid-url']
+    },
+    {
+      description: 'when urlList is not an array',
+      error: 'must be an array of strings',
+      urlList: 'not-an-array'
+    }
+  ])('should handle errors, $description', async ({ error, urlList }) => {
+    const [_name, _schema, callback] = usePatternFlyDocsTool();
 
-    it('should throw error when urlList is not an array', async () => {
-      const tool = usePatternFlyDocsTool();
-      const callback = tool[2];
-
-      await expect(callback({ urlList: 'not-an-array' })).rejects.toThrow(McpError);
-      await expect(callback({ urlList: 'not-an-array' })).rejects.toThrow('must be an array of strings');
-    });
-
-    it('should throw error when urlList is null', async () => {
-      const tool = usePatternFlyDocsTool();
-      const callback = tool[2];
-
-      await expect(callback({ urlList: null })).rejects.toThrow(McpError);
-    });
-
-    it('should handle processing errors', async () => {
-      mockProcessDocs.mockRejectedValue(new Error('File not found'));
-
-      const tool = usePatternFlyDocsTool();
-      const callback = tool[2];
-
-      await expect(callback({ urlList: ['missing.md'] })).rejects.toThrow(McpError);
-      await expect(callback({ urlList: ['missing.md'] })).rejects.toThrow('Failed to fetch documentation');
-    });
-
-    it('should handle empty urlList', async () => {
-      mockProcessDocs.mockResolvedValue('');
-
-      const tool = usePatternFlyDocsTool();
-      const callback = tool[2];
-      const result = await callback({ urlList: [] });
-
-      expect(mockProcessDocs).toHaveBeenCalledWith([]);
-      expect(result.content[0].text).toBe('');
-    });
-
-    it('should handle multiple URLs', async () => {
-      mockProcessDocs.mockResolvedValue('Combined docs content');
-
-      const tool = usePatternFlyDocsTool();
-      const callback = tool[2];
-      const result = await callback({ urlList: ['file1.md', 'file2.md', 'file3.md'] });
-
-      expect(mockProcessDocs).toHaveBeenCalledWith(['file1.md', 'file2.md', 'file3.md']);
-      expect(result.content[0].text).toBe('Combined docs content');
-    });
+    await expect(callback({ urlList })).rejects.toThrow(McpError);
+    await expect(callback({ urlList })).rejects.toThrow(error);
   });
 });
