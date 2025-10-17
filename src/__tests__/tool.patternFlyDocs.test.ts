@@ -42,6 +42,21 @@ describe('usePatternFlyDocsTool, callback', () => {
       description: 'with empty files',
       value: 'trimmed content',
       urlList: ['components/button.md', '', '   ', 'components/card.md', 'components/table.md']
+    },
+    {
+      description: 'with empty urlList',
+      value: 'empty content',
+      urlList: []
+    },
+    {
+      description: 'with empty strings in a urlList',
+      value: 'trimmed and empty content',
+      urlList: ['', ' ']
+    },
+    {
+      description: 'with invalid urlList',
+      value: 'invalid path',
+      urlList: ['invalid-url']
     }
   ])('should parse parameters, $description', async ({ value, urlList }) => {
     mockProcessDocs.mockResolvedValue(value);
@@ -50,14 +65,6 @@ describe('usePatternFlyDocsTool, callback', () => {
 
     expect(mockProcessDocs).toHaveBeenCalledWith(urlList);
     expect(result).toMatchSnapshot();
-  });
-
-  it('should handle processing errors', async () => {
-    mockProcessDocs.mockRejectedValue(new Error('File not found'));
-    const [_name, _schema, callback] = usePatternFlyDocsTool();
-
-    await expect(callback({ urlList: ['missing.md'] })).rejects.toThrow(McpError);
-    await expect(callback({ urlList: ['missing.md'] })).rejects.toThrow('Failed to fetch documentation');
   });
 
   it.each([
@@ -72,21 +79,6 @@ describe('usePatternFlyDocsTool, callback', () => {
       urlList: null
     },
     {
-      description: 'with empty urlList',
-      error: 'Failed to fetch documentation',
-      urlList: []
-    },
-    {
-      description: 'with empty strings in a urlList',
-      error: 'Failed to fetch documentation',
-      urlList: ['', ' ']
-    },
-    {
-      description: 'with invalid urlList',
-      error: 'Failed to fetch documentation',
-      urlList: ['invalid-url']
-    },
-    {
       description: 'when urlList is not an array',
       error: 'must be an array of strings',
       urlList: 'not-an-array'
@@ -96,5 +88,13 @@ describe('usePatternFlyDocsTool, callback', () => {
 
     await expect(callback({ urlList })).rejects.toThrow(McpError);
     await expect(callback({ urlList })).rejects.toThrow(error);
+  });
+
+  it('should handle processing errors', async () => {
+    mockProcessDocs.mockRejectedValue(new Error('File not found'));
+    const [_name, _schema, callback] = usePatternFlyDocsTool();
+
+    await expect(callback({ urlList: ['missing.md'] })).rejects.toThrow(McpError);
+    await expect(callback({ urlList: ['missing.md'] })).rejects.toThrow('Failed to fetch documentation');
   });
 });

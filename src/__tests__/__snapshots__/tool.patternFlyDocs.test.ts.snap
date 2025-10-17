@@ -328,3 +328,36 @@ exports[`usePatternFlyDocsTool, callback should parse parameters, with empty fil
   ],
 }
 `;
+
+exports[`usePatternFlyDocsTool, callback should parse parameters, with empty strings in a urlList 1`] = `
+{
+  "content": [
+    {
+      "text": "trimmed and empty content",
+      "type": "text",
+    },
+  ],
+}
+`;
+
+exports[`usePatternFlyDocsTool, callback should parse parameters, with empty urlList 1`] = `
+{
+  "content": [
+    {
+      "text": "empty content",
+      "type": "text",
+    },
+  ],
+}
+`;
+
+exports[`usePatternFlyDocsTool, callback should parse parameters, with invalid urlList 1`] = `
+{
+  "content": [
+    {
+      "text": "invalid path",
+      "type": "text",
+    },
+  ],
+}
+`;
