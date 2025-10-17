@@ -14,28 +14,25 @@ describe('parseCliOptions', () => {
     process.argv = originalArgv;
   });
 
-  it('should attempt to parse --docs-host flag', () => {
-    process.argv = ['node', 'script.js', '--docs-host'];
+  it.each([
+    {
+      description: 'with --docs-host flag',
+      args: ['node', 'script.js', '--docs-host']
+    },
+    {
+      description: 'without --docs-host flag',
+      args: ['node', 'script.js']
+    },
+    {
+      description: 'with other arguments',
+      args: ['node', 'script.js', 'other', 'args']
+    }
+  ])('should attempt to parse args $description', ({ args = [] }) => {
+    process.argv = args;
 
     const result = parseCliOptions();
 
-    expect(result.docsHost).toBe(true);
-  });
-
-  it('should attempt to return false for docsHost when flag is not present', () => {
-    process.argv = ['node', 'script.js'];
-
-    const result = parseCliOptions();
-
-    expect(result.docsHost).toBe(false);
-  });
-
-  it('should attempt to handle other arguments', () => {
-    process.argv = ['node', 'script.js', 'other', 'args'];
-
-    const result = parseCliOptions();
-
-    expect(result.docsHost).toBe(false);
+    expect(result).toMatchSnapshot();
   });
 });
 

@@ -140,3 +140,21 @@ exports[`options should return specific properties 1`] = `
   "parseCliOptions": [Function],
 }
 `;
+
+exports[`parseCliOptions should attempt to parse args with --docs-host flag 1`] = `
+{
+  "docsHost": true,
+}
+`;
+
+exports[`parseCliOptions should attempt to parse args with other arguments 1`] = `
+{
+  "docsHost": false,
+}
+`;
+
+exports[`parseCliOptions should attempt to parse args without --docs-host flag 1`] = `
+{
+  "docsHost": false,
+}
+`;
