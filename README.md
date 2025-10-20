@@ -4,16 +4,16 @@ A Model Context Protocol (MCP) server that provides access to PatternFly React d
 
 ## What is MCP?
 
-The Model Context Protocol (MCP) is an open standard that enables AI assistants to securely access external data sources and tools. This server exposes PatternFly documentation and development rules through a standard MCP stdio transport, so any MCP‑compatible client can call its tools.
+The Model Context Protocol (MCP) is an open standard that enables AI assistants to securely access external data sources and tools. This server provides a standardized way to expose PatternFly documentation and development rules to MCP-compatible clients.
 
 ## Features
 
-- TypeScript implementation with ES modules
-- PatternFly documentation access (design guidelines, accessibility, charts, and local docs)
-- Two tools for fetching index content and specific pages
-- Simple memoization for fast repeat fetches
-- Robust error handling with MCP error codes
-- Works over stdio; easy to run from MCP clients
+- **TypeScript**: Full type safety and modern JavaScript features
+- **PatternFly Documentation Access**: Browse, search, and retrieve PatternFly development rules
+- **Comprehensive Rule Coverage**: Access setup, guidelines, components, charts, chatbot, and troubleshooting documentation
+- **Smart Search**: Find specific rules and patterns across all documentation
+- **Error Handling**: Robust error handling with proper MCP error codes
+- **Modern Node.js**: Uses ES modules and the latest Node.js features
 
 ## Prerequisites
 
@@ -118,7 +118,7 @@ Then, passing a local path such as react-core/6.0.0/llms.txt in urlList will loa
 
 ## MCP client configuration examples
 
-Most MCP clients use a JSON configuration that tells the client how to start this server. The server itself does not read that JSON; it only reads CLI flags and environment variables. Below are examples you can adapt to your MPC client.
+Most MCP clients use a JSON configuration that tells the client how to start this server. The server itself does not read that JSON; it only reads CLI flags and environment variables. Below are examples you can adapt to your MCP client.
 
 ### Minimal client config (npx)
 
@@ -201,15 +201,20 @@ npx @modelcontextprotocol/inspector-cli \
 
 ## Programmatic usage (advanced)
 
-The server factory is exported. While there’s no explicit exports map, advanced users can import the built server module directly.
+The `runServer` function is exported via the package exports map. You can import it from the dedicated subpath or the package root.
 
 Example (ESM):
 
 ```js
-// Not officially supported API surface; paths may change in future versions
-import { runServer } from '@jephilli-patternfly-docs/mcp/dist/server.js';
+// Prefer the public export subpath
+import { runServer } from '@jephilli-patternfly-docs/mcp/server';
 
+// Or from the package root (index.ts re-exports it)
+import { runServer } from '@jephilli-patternfly-docs/mcp';
+
+// Starts the MCP server and listens on stdio
 await runServer();
+// Server runs until interrupted (Ctrl+C)
 ```
 
 ## Returned content details
