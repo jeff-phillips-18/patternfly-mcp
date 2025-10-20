@@ -5,7 +5,7 @@ exports[`runServer should attempt to run server, create transport, connect, and 
   "info": [],
   "log": [
     [
-      "Patternfly MCP server running on stdio",
+      "PatternFly MCP server running on stdio",
     ],
   ],
   "mcpServer": [
@@ -34,7 +34,7 @@ exports[`runServer should attempt to run server, register a tool: console 1`] = 
   ],
   "log": [
     [
-      "Patternfly MCP server running on stdio",
+      "PatternFly MCP server running on stdio",
     ],
   ],
   "mcpServer": [
@@ -75,7 +75,7 @@ exports[`runServer should attempt to run server, register multiple tools: consol
   ],
   "log": [
     [
-      "Patternfly MCP server running on stdio",
+      "PatternFly MCP server running on stdio",
     ],
   ],
   "mcpServer": [
@@ -117,7 +117,7 @@ exports[`runServer should attempt to run server, use custom options: console 1`]
   "info": [],
   "log": [
     [
-      "Patternfly MCP server running on stdio",
+      "PatternFly MCP server running on stdio",
     ],
   ],
   "mcpServer": [
@@ -149,7 +149,7 @@ exports[`runServer should attempt to run server, use default tools: console 1`] 
   ],
   "log": [
     [
-      "Patternfly MCP server running on stdio",
+      "PatternFly MCP server running on stdio",
     ],
   ],
   "mcpServer": [

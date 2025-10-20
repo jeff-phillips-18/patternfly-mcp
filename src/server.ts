@@ -49,7 +49,7 @@ const runServer = async (options = OPTIONS, {
     const transport = new StdioServerTransport();
 
     await server.connect(transport);
-    console.log('Patternfly MCP server running on stdio');
+    console.log('PatternFly MCP server running on stdio');
   } catch (error) {
     console.error('Error creating MCP server:', error);
     throw error;
